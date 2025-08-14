@@ -282,29 +282,99 @@ chown cassandra:cassandra /var/run/cassandra
 # Configure JVM options
 log "Configuring JVM options..."
 JVM_OPTS="/opt/cassandra/conf/jvm.options"
-cp $JVM_OPTS ${JVM_OPTS}.backup
 
-# Get available memory
-TOTAL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $2}')
-HEAP_SIZE=$((TOTAL_MEM / 4))
+# Check if jvm.options exists, if not create it
+if [ ! -f "$JVM_OPTS" ]; then
+    log "Creating jvm.options file..."
+    # Get available memory
+    TOTAL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $2}')
+    HEAP_SIZE=$((TOTAL_MEM / 4))
 
-if [ $HEAP_SIZE -gt 8192 ]; then
-    HEAP_SIZE=8192
-elif [ $HEAP_SIZE -lt 512 ]; then
-    HEAP_SIZE=512
+    if [ $HEAP_SIZE -gt 8192 ]; then
+        HEAP_SIZE=8192
+    elif [ $HEAP_SIZE -lt 512 ]; then
+        HEAP_SIZE=512
+    fi
+
+    log "Setting heap size to ${HEAP_SIZE}M"
+
+    # Create JVM options file
+    cat > $JVM_OPTS << EOF
+# Heap size
+-Xms${HEAP_SIZE}M
+-Xmx${HEAP_SIZE}M
+
+# GC settings
+-XX:+UseG1GC
+-XX:+UnlockExperimentalVMOptions
+-XX:+UseG1GC
+-XX:G1RSetUpdatingPauseTimePercent=5
+-XX:MaxGCPauseMillis=300
+-XX:InitiatingHeapOccupancyPercent=70
+
+# GC logging
+-Xloggc:/var/log/cassandra/gc.log
+-XX:+UseGCLogFileRotation
+-XX:NumberOfGCLogFiles=10
+-XX:GCLogFileSize=10M
+-XX:+PrintGC
+-XX:+PrintGCDetails
+-XX:+PrintGCTimeStamps
+-XX:+PrintGCApplicationStoppedTime
+-XX:+PrintPromotionFailure
+-XX:PrintFLSStatistics=1
+
+# JVM settings
+-ea
+-XX:+UseThreadPriorities
+-XX:ThreadPriorityPolicy=42
+-XX:+HeapDumpOnOutOfMemoryError
+-Xss256k
+-XX:StringTableSize=1000003
+-XX:+AlwaysPreTouch
+-XX:-UseBiasedLocking
+-XX:+UseTLAB
+-XX:+ResizeTLAB
+-XX:+UseNUMA
+-XX:+PerfDisableSharedMem
+-Djava.net.preferIPv4Stack=true
+
+# Security
+-Djava.security.egd=file:/dev/./urandom
+
+# Netty
+-Dio.netty.eventLoop.maxPendingTasks=65536
+EOF
+else
+    # Backup existing file
+    cp $JVM_OPTS ${JVM_OPTS}.backup
+    
+    # Get available memory
+    TOTAL_MEM=$(free -m | awk 'NR==2{printf "%.0f", $2}')
+    HEAP_SIZE=$((TOTAL_MEM / 4))
+
+    if [ $HEAP_SIZE -gt 8192 ]; then
+        HEAP_SIZE=8192
+    elif [ $HEAP_SIZE -lt 512 ]; then
+        HEAP_SIZE=512
+    fi
+
+    log "Setting heap size to ${HEAP_SIZE}M"
+
+    # Update JVM options
+    sed -i "s/^-Xms.*/-Xms${HEAP_SIZE}M/" $JVM_OPTS
+    sed -i "s/^-Xmx.*/-Xmx${HEAP_SIZE}M/" $JVM_OPTS
 fi
-
-log "Setting heap size to ${HEAP_SIZE}M"
-
-# Update JVM options
-sed -i "s/^-Xms.*/-Xms${HEAP_SIZE}M/" $JVM_OPTS
-sed -i "s/^-Xmx.*/-Xmx${HEAP_SIZE}M/" $JVM_OPTS
 
 # Configure logback
 log "Configuring logging..."
 LOGBACK_CONF="/opt/cassandra/conf/logback.xml"
-sed -i 's|<file>.*system.log</file>|<file>/var/log/cassandra/system.log</file>|' $LOGBACK_CONF
-sed -i 's|<file>.*debug.log</file>|<file>/var/log/cassandra/debug.log</file>|' $LOGBACK_CONF
+if [ -f "$LOGBACK_CONF" ]; then
+    sed -i 's|<file>.*system.log</file>|<file>/var/log/cassandra/system.log</file>|' $LOGBACK_CONF
+    sed -i 's|<file>.*debug.log</file>|<file>/var/log/cassandra/debug.log</file>|' $LOGBACK_CONF
+else
+    warn "logback.xml not found, skipping log configuration"
+fi
 
 # Set proper permissions
 chown -R cassandra:cassandra /opt/cassandra
