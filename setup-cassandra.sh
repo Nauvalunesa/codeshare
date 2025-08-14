@@ -98,6 +98,14 @@ fi
 # Extract Cassandra
 log "Installing Cassandra..."
 tar -xzf "apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz"
+
+if [ -d "/opt/cassandra" ]; then
+    log "Removing existing Cassandra installation..."
+    systemctl stop cassandra 2>/dev/null || true
+    rm -rf /opt/cassandra
+fi
+
+mkdir -p /opt
 mv "apache-cassandra-$CASSANDRA_VERSION" /opt/cassandra
 chown -R cassandra:cassandra /opt/cassandra
 
@@ -418,13 +426,7 @@ fi
 
 # Create keyspace for Lunox app
 log "Creating Lunox keyspace..."
-/opt/cassandra/bin/cqlsh -e "
-CREATE KEYSPACE IF NOT EXISTS lunox 
-WITH REPLICATION = {
-    'class': 'SimpleStrategy',
-    'replication_factor': 1
-};
-"
+/opt/cassandra/bin/cqlsh -e "CREATE KEYSPACE IF NOT EXISTS lunox WITH REPLICATION = {'class': 'SimpleStrategy', 'replication_factor': 1};"
 
 # Display connection info
 log "=== Cassandra Setup Complete ==="

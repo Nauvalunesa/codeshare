@@ -1,0 +1,329 @@
+/* Lunox.io Clone - Main Stylesheet */
+:root {
+  --primary-color: #6366f1;
+  --secondary-color: #8b5cf6;
+  --accent-color: #06b6d4;
+  --background-color: #0f172a;
+  --surface-color: #1e293b;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --border-color: #334155;
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
+  --error-color: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* Header */
+.header {
+  background: var(--surface-color);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+}
+
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+}
+
+.nav-links a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.nav-links a:hover {
+  color: var(--text-primary);
+  background: var(--background-color);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.875rem;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #5855eb;
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--border-color);
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.form-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-textarea {
+  min-height: 200px;
+  resize: vertical;
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* Code Editor */
+.editor-container {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.editor-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--background-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.toolbar-btn {
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.75rem;
+}
+
+.toolbar-btn:hover {
+  background: var(--surface-color);
+  color: var(--text-primary);
+}
+
+/* Paste Display */
+.paste-container {
+  background: var(--surface-color);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+.paste-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: var(--background-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.paste-meta {
+  display: flex;
+  gap: 1rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.paste-content {
+  padding: 1rem;
+}
+
+.paste-content pre {
+  background: var(--background-color);
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+/* Comments */
+.comments-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.comment {
+  background: var(--surface-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  font-weight: 500;
+  color: var(--primary-color);
+}
+
+.comment-date {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Dashboard */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.dashboard-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.dashboard-card h3 {
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+}
+
+/* Stats */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin: 2rem 0;
+}
+
+.stat-card {
+  background: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  text-align: center;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.stat-label {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Syntax Highlighting */
+.hljs {
+  background: var(--background-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.hljs-keyword {
+  color: var(--primary-color) !important;
+}
+
+.hljs-string {
+  color: var(--success-color) !important;
+}
+
+.hljs-comment {
+  color: var(--text-secondary) !important;
+}
+
+.hljs-number {
+  color: var(--accent-color) !important;
+}
