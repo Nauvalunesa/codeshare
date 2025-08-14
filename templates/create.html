@@ -132,15 +132,10 @@
                         <button type="button" onclick="formatText('code')">Code</button>
                         <button type="button" onclick="insertList()">List</button>
                         <button type="button" onclick="insertCodeBlock()">Code Block</button>
-                        <button type="button" onclick="runCode()" class="bg-green-600 hover:bg-green-700">▶ Run Code</button>
                     </div>
                     <textarea id="content" name="content" required
                               class="rich-editor w-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                               placeholder="Paste your code or text here, or upload a file above..."></textarea>
-                    <div id="output" class="mt-4 p-4 bg-gray-900 rounded-lg hidden">
-                        <h4 class="text-sm font-medium mb-2">Output:</h4>
-                        <pre id="output-content" class="text-green-400 text-sm whitespace-pre-wrap"></pre>
-                    </div>
                 </div>
                 
                 <div class="grid sm:grid-cols-3 gap-4">
@@ -201,7 +196,7 @@
         function handleFileSelect() {
             const file = fileInput.files[0];
             if (file) {
-                fileInfo.innerHTML = `<span class="text-green-400">📄 ${file.name}</span>`;
+                fileInfo.innerHTML = `<span class="text-green-400">📄 File loaded: ${file.name} (${(file.size/1024).toFixed(1)}KB)</span>`;
                 
                 // Auto-detect language from file extension
                 const ext = file.name.split('.').pop().toLowerCase();
@@ -216,61 +211,15 @@
                     languageSelect.value = languageMap[ext];
                 }
                 
-                // Read file content and preview
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     const content = e.target.result;
-                    if (content.length < 10000) { // Only preview small files
-                        contentTextarea.value = content;
-                    } else {
-                        contentTextarea.placeholder = `File loaded: ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
-                    }
+                    contentTextarea.value = content;
+                    contentTextarea.placeholder = "File content loaded successfully!";
                 };
                 reader.readAsText(file);
             } else {
                 fileInfo.innerHTML = '<span class="text-gray-400">📁 Click or drag file here</span>';
-            }
-        }
-
-        async function runCode() {
-            const content = document.getElementById('content').value;
-            const language = document.getElementById('language').value;
-            const outputDiv = document.getElementById('output');
-            const outputContent = document.getElementById('output-content');
-            
-            if (!content.trim()) {
-                alert('Please enter some code to run');
-                return;
-            }
-            
-            outputDiv.classList.remove('hidden');
-            outputContent.textContent = 'Running...';
-            
-            try {
-                const response = await fetch('/api/run-code', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        code: content,
-                        language: language
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    outputContent.textContent = data.output || 'No output';
-                    outputContent.className = data.error ? 'text-red-400 text-sm whitespace-pre-wrap' : 'text-green-400 text-sm whitespace-pre-wrap';
-                } else {
-                    outputContent.textContent = data.detail || 'Error running code';
-                    outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
-                }
-            } catch (error) {
-                outputContent.textContent = 'Failed to run code: ' + error.message;
-                outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
             }
         }
 
@@ -309,7 +258,7 @@
         function insertCodeBlock() {
             const textarea = document.getElementById('content');
             const start = textarea.selectionStart;
-            const codeBlock = '\n```\nYour code here\n```\n';
+            const codeBlock = '\n\`\`\`\nYour code here\n\`\`\`\n';
             
             textarea.value = textarea.value.substring(0, start) + codeBlock + textarea.value.substring(start);
             textarea.focus();
