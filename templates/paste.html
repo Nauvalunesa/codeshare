@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}{{ paste.title }} - Lunox Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="bg-gray-800 rounded-lg p-6 mb-6">
+        <div class="flex justify-between items-start mb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-white">{{ paste.title }}</h1>
+                <p class="text-gray-400 text-sm">
+                    By {{ paste.author_username }} • {{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}
+                    {% if paste.language != 'text' %} • {{ paste.language }}{% endif %}
+                </p>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center text-gray-400">
+                    <span class="text-sm">👁️ <span id="view-count">{{ paste.views or 0 }}</span> views</span>
+                </div>
+                <button onclick="copyToClipboard()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded text-sm">
+                    Copy Link
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-gray-900 rounded-lg p-4 overflow-x-auto">
+            <pre><code class="language-{{ paste.language }}">{{ paste.content }}</code></pre>
+        </div>
+    </div>
+    
+    <!-- Thread Section -->
+    <div class="bg-gray-800 rounded-lg p-6">
+        <h3 class="text-lg font-semibold mb-4">Discussion Thread</h3>
+        
+        <form id="threadForm" class="mb-6">
+            <input type="hidden" name="paste_id" value="{{ paste.id }}">
+            <textarea name="content" required placeholder="Add your comment..."
+                      class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"></textarea>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">
+                Post Comment
+            </button>
+        </form>
+        
+        <div id="threads" class="space-y-4">
+            {% for thread in threads %}
+            <div class="bg-gray-700 rounded-lg p-4">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="font-medium text-blue-400">{{ thread.author_username }}</span>
+                    <span class="text-gray-400 text-sm">{{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                </div>
+                <p class="text-gray-200">{{ thread.content }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+function copyToClipboard() {
+    navigator.clipboard.writeText(window.location.href);
+    alert('Link copied to clipboard!');
+}
+
+document.getElementById('threadForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/api/thread', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert(data.detail || 'Failed to post comment');
+        }
+    } catch (error) {
+        alert('Failed to post comment: ' + error.message);
+    }
+});
+
+// Update view count periodically
+setInterval(async () => {
+    try {
+        const response = await fetch(`/api/paste/{{ paste.id }}/stats`);
+        const data = await response.json();
+        document.getElementById('view-count').textContent = data.views;
+    } catch (error) {
+        console.error('Failed to update view count:', error);
+    }
+}, 30000);
+</script>
+{% endblock %}

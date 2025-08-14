@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Lunox Clone - Code Sharing Platform{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <style>
+        .rich-editor {
+            min-height: 300px;
+            border: 1px solid #374151;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            background: #1f2937;
+            color: #f9fafb;
+        }
+        .toolbar {
+            background: #374151;
+            padding: 0.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            border-bottom: 1px solid #4b5563;
+        }
+        .toolbar button {
+            background: #4b5563;
+            color: #f9fafb;
+            border: none;
+            padding: 0.25rem 0.5rem;
+            margin: 0 0.25rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+        }
+        .toolbar button:hover {
+            background: #6b7280;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <nav class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-blue-400">Lunox Clone</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="/create" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">
+                        Create Paste
+                    </a>
+                    <div id="auth-buttons">
+                        <a href="/login" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                            Login
+                        </a>
+                        <a href="/signup" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md text-sm font-medium">
+                            Sign Up
+                        </a>
+                    </div>
+                    <div id="user-menu" class="hidden">
+                        <a href="/dashboard" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                            Dashboard
+                        </a>
+                        <button onclick="logout()" class="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script>
+        // Check if user is logged in
+        const token = localStorage.getItem('token');
+        if (token) {
+            document.getElementById('auth-buttons').classList.add('hidden');
+            document.getElementById('user-menu').classList.remove('hidden');
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/';
+        }
+
+        // Add authorization header to all requests
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            const token = localStorage.getItem('token');
+            if (token && args[1]) {
+                args[1].headers = {
+                    ...args[1].headers,
+                    'Authorization': `Bearer ${token}`
+                };
+            }
+            return originalFetch.apply(this, args);
+        };
+    </script>
+</body>
+</html>

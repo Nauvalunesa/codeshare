@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Lunox Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">Dashboard</h1>
+        <a href="/create" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-md">
+            Create New Paste
+        </a>
+    </div>
+    
+    <div class="bg-gray-800 rounded-lg p-6">
+        <h2 class="text-lg font-semibold mb-4">Your Pastes</h2>
+        
+        {% if pastes %}
+        <div class="space-y-4">
+            {% for paste in pastes %}
+            <div class="bg-gray-700 rounded-lg p-4 flex justify-between items-center">
+                <div>
+                    <h3 class="font-medium text-white">
+                        <a href="/paste/{{ paste.id }}" class="hover:text-blue-400">{{ paste.title }}</a>
+                    </h3>
+                    <p class="text-gray-400 text-sm">
+                        {{ paste.created_at.strftime('%Y-%m-%d %H:%M') }} • 
+                        {{ paste.language }} • 
+                        👁️ {{ paste.views or 0 }} views
+                        {% if paste.is_private %} • 🔒 Private{% endif %}
+                        {% if paste.password_hash %} • 🔐 Password Protected{% endif %}
+                    </p>
+                </div>
+                <div class="flex space-x-2">
+                    <a href="/paste/{{ paste.id }}" class="text-blue-400 hover:text-blue-300 text-sm">View</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-400 text-center py-8">
+            You haven't created any pastes yet. <a href="/create" class="text-blue-400 hover:text-blue-300">Create your first paste!</a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

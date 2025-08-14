@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up - Lunox Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto bg-gray-800 rounded-lg shadow-lg p-8">
+    <h2 class="text-2xl font-bold text-center mb-6">Sign Up</h2>
+    
+    <form id="signupForm" class="space-y-4">
+        <div>
+            <label for="username" class="block text-sm font-medium text-gray-300">Username</label>
+            <input type="text" id="username" name="username" required
+                   class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+            <label for="email" class="block text-sm font-medium text-gray-300">Email</label>
+            <input type="email" id="email" name="email" required
+                   class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+            <label for="password" class="block text-sm font-medium text-gray-300">Password</label>
+            <input type="password" id="password" name="password" required
+                   class="mt-1 block w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 py-2 px-4 rounded-md font-medium">
+            Sign Up
+        </button>
+    </form>
+    
+    <p class="mt-4 text-center text-gray-400">
+        Sudah punya akun? <a href="/login" class="text-blue-400 hover:text-blue-300">Login di sini</a>
+    </p>
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/api/signup', {
+            method: 'POST',
+            body: formData
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            localStorage.setItem('token', data.access_token);
+            window.location.href = '/dashboard';
+        } else {
+            alert(data.detail || 'Signup failed');
+        }
+    } catch (error) {
+        alert('Signup failed: ' + error.message);
+    }
+});
+</script>
+{% endblock %}

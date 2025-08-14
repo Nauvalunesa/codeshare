@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Create Paste - Lunox Clone{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h2 class="text-2xl font-bold mb-6">Create New Paste</h2>
+    
+    <form id="pasteForm" class="space-y-6">
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-300 mb-2">Title</label>
+            <input type="text" id="title" name="title" required
+                   class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        
+        <div>
+            <label for="language" class="block text-sm font-medium text-gray-300 mb-2">Language</label>
+            <select id="language" name="language"
+                    class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="text">Plain Text</option>
+                <option value="javascript">JavaScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+                <option value="html">HTML</option>
+                <option value="css">CSS</option>
+                <option value="sql">SQL</option>
+                <option value="json">JSON</option>
+                <option value="xml">XML</option>
+            </select>
+        </div>
+        
+        <div>
+            <label class="block text-sm font-medium text-gray-300 mb-2">Content</label>
+            <div class="toolbar">
+                <button type="button" onclick="formatText('bold')">Bold</button>
+                <button type="button" onclick="formatText('italic')">Italic</button>
+                <button type="button" onclick="formatText('code')">Code</button>
+                <button type="button" onclick="insertList()">List</button>
+                <button type="button" onclick="insertCodeBlock()">Code Block</button>
+            </div>
+            <textarea id="content" name="content" required
+                      class="rich-editor w-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Paste your code or text here..."></textarea>
+        </div>
+        
+        <div class="grid md:grid-cols-3 gap-4">
+            <div>
+                <label class="flex items-center">
+                    <input type="checkbox" id="is_private" name="is_private" class="mr-2">
+                    <span class="text-sm text-gray-300">Private paste</span>
+                </label>
+            </div>
+            
+            <div>
+                <label for="password" class="block text-sm font-medium text-gray-300 mb-1">Password (optional)</label>
+                <input type="password" id="password" name="password"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            
+            <div>
+                <label for="expires_hours" class="block text-sm font-medium text-gray-300 mb-1">Expires in (hours)</label>
+                <input type="number" id="expires_hours" name="expires_hours" min="0" value="0"
+                       class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+        </div>
+        
+        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-md font-medium text-lg">
+            Create Paste
+        </button>
+    </form>
+</div>
+
+<script>
+function formatText(format) {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    
+    let formattedText = '';
+    switch(format) {
+        case 'bold':
+            formattedText = `**${selectedText}**`;
+            break;
+        case 'italic':
+            formattedText = `*${selectedText}*`;
+            break;
+        case 'code':
+            formattedText = `\`${selectedText}\``;
+            break;
+    }
+    
+    textarea.value = textarea.value.substring(0, start) + formattedText + textarea.value.substring(end);
+    textarea.focus();
+}
+
+function insertList() {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const listText = '\n- Item 1\n- Item 2\n- Item 3\n';
+    
+    textarea.value = textarea.value.substring(0, start) + listText + textarea.value.substring(start);
+    textarea.focus();
+}
+
+function insertCodeBlock() {
+    const textarea = document.getElementById('content');
+    const start = textarea.selectionStart;
+    const codeBlock = '\n```\nYour code here\n```\n';
+    
+    textarea.value = textarea.value.substring(0, start) + codeBlock + textarea.value.substring(start);
+    textarea.focus();
+}
+
+document.getElementById('pasteForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    
+    try {
+        const response = await fetch('/api/paste', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            window.location.href = `/paste/${data.paste_id}`;
+        } else {
+            alert(data.detail || 'Failed to create paste');
+        }
+    } catch (error) {
+        alert('Failed to create paste: ' + error.message);
+    }
+});
+</script>
+{% endblock %}
