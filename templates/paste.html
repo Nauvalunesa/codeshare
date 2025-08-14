@@ -50,7 +50,10 @@
                 <div class="flex-1">
                     <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">{{ paste.title }}</h1>
                     <p class="text-gray-300 text-sm">
-                        By <span class="text-blue-300">{{ paste.author_username }}</span> • 
+                        By <span class="text-blue-300 flex items-center gap-1">
+                            {{ paste.author_username }}
+                            <span class="text-blue-400">✓</span>
+                        </span> • 
                         <!-- Fixed strftime error by parsing ISO string -->
                         {% set created_date = paste.created_at[:19] %}
                         {{ created_date.replace('T', ' ') }}
@@ -65,26 +68,14 @@
                     <button onclick="copyCode()" class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm transition-all">
                         📋 Salin Kode
                     </button>
-                    <button onclick="copyToClipboard()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
-                        🔗 Copy Link
+                    <button onclick="copyURL()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
+                        🔗 Salin URL
                     </button>
-                    <!-- Added run code button for executable languages -->
-                    {% if paste.language in ['python', 'javascript', 'bash'] %}
-                    <button onclick="runCode()" class="btn-primary px-3 py-2 rounded-lg text-sm">
-                        ▶ Run Code
-                    </button>
-                    {% endif %}
                 </div>
             </div>
             
             <div class="bg-gray-900/80 rounded-lg p-4 overflow-x-auto">
                 <pre><code class="language-{{ paste.language }}">{{ paste.content }}</code></pre>
-            </div>
-            
-            <!-- Added output section for code execution -->
-            <div id="output" class="mt-4 p-4 bg-gray-900/80 rounded-lg hidden">
-                <h4 class="text-sm font-medium mb-2">Output:</h4>
-                <pre id="output-content" class="text-green-400 text-sm whitespace-pre-wrap"></pre>
             </div>
         </div>
         
@@ -106,7 +97,10 @@
                 {% for thread in threads %}
                 <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
                     <div class="flex flex-col sm:flex-row justify-between items-start mb-2 space-y-1 sm:space-y-0">
-                        <span class="font-medium text-blue-300">{{ thread.author_username }}</span>
+                        <span class="font-medium text-blue-300 flex items-center gap-1">
+                            {{ thread.author_username }}
+                            <span class="text-blue-400">✓</span>
+                        </span>
                         <!-- Fixed strftime error for thread dates -->
                         {% set thread_date = thread.created_at[:19] %}
                         <span class="text-gray-400 text-sm">{{ thread_date.replace('T', ' ') }}</span>
@@ -119,9 +113,24 @@
     </div>
 
     <script>
-        function copyToClipboard() {
-            navigator.clipboard.writeText(window.location.href);
-            alert('Link copied to clipboard!');
+        function copyURL() {
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                // Find the button that was clicked
+                const btn = document.querySelector('button[onclick="copyURL()"]');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ URL Tersalin!';
+                btn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+                btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy URL:', err);
+                alert('Gagal menyalin URL. Silakan copy manual dari address bar.');
+            });
         }
 
         function logout() {
@@ -129,62 +138,76 @@
             window.location.href = '/login';
         }
 
-        async function runCode() {
-            const codeElement = document.querySelector('code[class*="language-"]');
-            const content = codeElement.textContent;
-            const language = '{{ paste.language }}';
-            const outputDiv = document.getElementById('output');
-            const outputContent = document.getElementById('output-content');
+        function copyCode() {
+            // Get the code content from the pre/code element
+            const codeElement = document.querySelector('pre code');
+            if (!codeElement) {
+                alert('Kode tidak ditemukan');
+                return;
+            }
             
-            outputDiv.classList.remove('hidden');
-            outputContent.textContent = 'Running...';
+            const content = codeElement.textContent || codeElement.innerText;
             
-            try {
-                const response = await fetch('/api/run-code', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    },
-                    body: JSON.stringify({
-                        code: content,
-                        language: language
-                    })
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(content).then(() => {
+                    // Find the button that was clicked
+                    const btn = document.querySelector('button[onclick="copyCode()"]');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✅ Tersalin!';
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    }, 2000);
+                }).catch(err => {
+                    console.error('Failed to copy code:', err);
+                    // Fallback for older browsers
+                    fallbackCopyTextToClipboard(content);
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    outputContent.textContent = data.output || 'No output';
-                    outputContent.className = data.error ? 'text-red-400 text-sm whitespace-pre-wrap' : 'text-green-400 text-sm whitespace-pre-wrap';
-                } else {
-                    outputContent.textContent = data.detail || 'Error running code';
-                    outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
-                }
-            } catch (error) {
-                outputContent.textContent = 'Failed to run code: ' + error.message;
-                outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
+            } else {
+                // Fallback for older browsers
+                fallbackCopyTextToClipboard(content);
             }
         }
 
-        function copyCode() {
-            const codeElement = document.querySelector('code[class*="language-"]');
-            const content = codeElement.textContent;
-            
-            navigator.clipboard.writeText(content).then(() => {
-                // Visual feedback
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✅ Tersalin!';
-                btn.classList.add('bg-green-500');
-                
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                    btn.classList.remove('bg-green-500');
-                }, 2000);
-            }).catch(err => {
-                alert('Gagal menyalin kode: ' + err.message);
-            });
+        function fallbackCopyTextToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.top = "0";
+            textArea.style.left = "0";
+            textArea.style.position = "fixed";
+            textArea.style.opacity = "0";
+
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    const btn = document.querySelector('button[onclick="copyCode()"]');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✅ Tersalin!';
+                    btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    btn.classList.add('bg-green-500', 'hover:bg-green-600');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('bg-green-500', 'hover:bg-green-600');
+                        btn.classList.add('bg-green-600', 'hover:bg-green-700');
+                    }, 2000);
+                } else {
+                    alert('Gagal menyalin kode. Silakan copy manual.');
+                }
+            } catch (err) {
+                console.error('Fallback: Oops, unable to copy', err);
+                alert('Gagal menyalin kode. Silakan copy manual.');
+            }
+
+            document.body.removeChild(textArea);
         }
 
         document.getElementById('threadForm').addEventListener('submit', async (e) => {

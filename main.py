@@ -231,6 +231,59 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+# Badge tier system functions
+def calculate_user_badges(username: str) -> List[str]:
+    """Calculate badges based on user activity"""
+    user_codes = get_user_codes(username)
+    total_pastes = len(user_codes)
+    total_views = sum(paste.get("views", 0) for paste in user_codes)
+    
+    badges = []
+    
+    # Badge tiers based on activity
+    if total_pastes >= 50 and total_views >= 10000:
+        badges.append("legend")
+    elif total_pastes >= 25 and total_views >= 5000:
+        badges.append("expert")
+    elif total_pastes >= 15 and total_views >= 2000:
+        badges.append("pro")
+    elif total_pastes >= 8 and total_views >= 500:
+        badges.append("verified")
+    elif total_pastes >= 3 and total_views >= 100:
+        badges.append("member")
+    else:
+        badges.append("newcomer")
+    
+    # Special badges
+    if total_views >= 1000:
+        badges.append("popular")
+    if total_pastes >= 10:
+        badges.append("prolific")
+    
+    return badges
+
+def update_user_badges(username: str) -> None:
+    """Update user badges based on current activity"""
+    user = get_user_by_username(username)
+    if user:
+        new_badges = calculate_user_badges(username)
+        user["badges"] = new_badges
+        save_user(username, user)
+
+def get_badge_info(badge: str) -> Dict[str, str]:
+    """Get badge display information"""
+    badge_info = {
+        "newcomer": {"name": "Newcomer", "color": "bg-gray-500", "icon": "🌱"},
+        "member": {"name": "Member", "color": "bg-green-500", "icon": "👤"},
+        "verified": {"name": "Verified", "color": "bg-blue-500", "icon": "✅"},
+        "pro": {"name": "Pro", "color": "bg-purple-500", "icon": "⭐"},
+        "expert": {"name": "Expert", "color": "bg-orange-500", "icon": "🏆"},
+        "legend": {"name": "Legend", "color": "bg-red-500", "icon": "👑"},
+        "popular": {"name": "Popular", "color": "bg-pink-500", "icon": "🔥"},
+        "prolific": {"name": "Prolific", "color": "bg-indigo-500", "icon": "📝"}
+    }
+    return badge_info.get(badge, {"name": badge.title(), "color": "bg-gray-500", "icon": "🏅"})
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "database": "json_files"}
@@ -310,13 +363,11 @@ async def create_paste(
     language: str = Form(default="text"),
     is_private: bool = Form(default=False),
     password: Optional[str] = Form(default=None),
-    expires_hours: int = Form(default=0),
     file: Optional[UploadFile] = File(default=None),
     current_user: str = Depends(get_current_user)
 ):
     paste_id = str(uuid.uuid4())
     password_hash = get_password_hash(password) if password else None
-    expires_at = (datetime.now() + timedelta(hours=expires_hours)).isoformat() if expires_hours > 0 else None
     
     # Handle file upload
     final_content = content
@@ -352,10 +403,12 @@ async def create_paste(
         "password_hash": password_hash,
         "views": 0,
         "created_at": datetime.now().isoformat(),
-        "expires_at": expires_at
+        "expires_at": None
     }
     
     save_code(paste_id, paste_data)
+    
+    update_user_badges(current_user)
     
     return {"paste_id": paste_id}
 
@@ -475,11 +528,25 @@ async def dashboard_api(current_user: str = Depends(get_current_user)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
+    update_user_badges(current_user)
+    updated_user = get_user_by_username(current_user)
+    
+    badge_details = []
+    for badge in updated_user.get("badges", []):
+        badge_info = get_badge_info(badge)
+        badge_details.append({
+            "name": badge,
+            "display_name": badge_info["name"],
+            "color": badge_info["color"],
+            "icon": badge_info["icon"]
+        })
+    
     return {
         "user": {
             "username": current_user,
-            "badges": user.get("badges", []),
-            "created_at": user.get("created_at")
+            "badges": updated_user.get("badges", []),
+            "badge_details": badge_details,
+            "created_at": updated_user.get("created_at")
         },
         "pastes": pastes
     }
