@@ -61,8 +61,12 @@
                     <div class="flex items-center text-gray-300">
                         <span class="text-sm">👁️ <span id="view-count">{{ paste.views or 0 }}</span> views</span>
                     </div>
+                    <!-- Added copy code button -->
+                    <button onclick="copyCode()" class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm transition-all">
+                        📋 Salin Kode
+                    </button>
                     <button onclick="copyToClipboard()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
-                        📋 Copy Link
+                        🔗 Copy Link
                     </button>
                     <!-- Added run code button for executable languages -->
                     {% if paste.language in ['python', 'javascript', 'bash'] %}
@@ -161,6 +165,26 @@
                 outputContent.textContent = 'Failed to run code: ' + error.message;
                 outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
             }
+        }
+
+        function copyCode() {
+            const codeElement = document.querySelector('code[class*="language-"]');
+            const content = codeElement.textContent;
+            
+            navigator.clipboard.writeText(content).then(() => {
+                // Visual feedback
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Tersalin!';
+                btn.classList.add('bg-green-500');
+                
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.classList.remove('bg-green-500');
+                }, 2000);
+            }).catch(err => {
+                alert('Gagal menyalin kode: ' + err.message);
+            });
         }
 
         document.getElementById('threadForm').addEventListener('submit', async (e) => {
