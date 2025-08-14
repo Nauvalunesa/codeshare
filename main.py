@@ -421,18 +421,29 @@ async def get_paste_stats(paste_id: str):
     return {"views": paste.get("views", 0)}
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(
-    request: Request, 
-    current_user: str = Depends(get_current_user)
-):
+async def dashboard(request: Request):
+    """Dashboard page - authentication handled client-side"""
+    return templates.TemplateResponse("dashboard.html", {"request": request})
+
+@app.get("/api/dashboard")
+async def dashboard_api(current_user: str = Depends(get_current_user)):
+    """API endpoint for dashboard data with authentication"""
     # Get user's pastes
     pastes = get_user_codes(current_user)
     
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "user": current_user,
+    # Get user info
+    user = get_user_by_username(current_user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return {
+        "user": {
+            "username": current_user,
+            "badges": user.get("badges", []),
+            "created_at": user.get("created_at")
+        },
         "pastes": pastes
-    })
+    }
 
 if __name__ == "__main__":
     import uvicorn
