@@ -1,10 +1,7 @@
 from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from cassandra.cluster import Cluster
-from cassandra.auth import PlainTextAuthProvider
 import uuid
 import hashlib
 import secrets
@@ -12,9 +9,18 @@ from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 import json
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 import os
 from decouple import config
+import time
+import logging
+import subprocess
+import tempfile
+import shutil
+
+# Setup logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Lunox Clone - Code Sharing Platform")
 
@@ -28,72 +34,167 @@ security = HTTPBearer()
 
 # Templates
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Cassandra connection
-def get_cassandra_session():
-    cluster = Cluster(['127.0.0.1'])
-    session = cluster.connect()
-    
-    # Create keyspace if not exists
-    session.execute("""
-        CREATE KEYSPACE IF NOT EXISTS lunox
-        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1}
-    """)
-    
-    session.set_keyspace('lunox')
-    
-    # Create tables
-    session.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id UUID PRIMARY KEY,
-            username TEXT,
-            email TEXT,
-            password_hash TEXT,
-            created_at TIMESTAMP,
-            badges SET<TEXT>
-        )
-    """)
-    
-    session.execute("""
-        CREATE TABLE IF NOT EXISTS pastes (
-            id UUID PRIMARY KEY,
-            title TEXT,
-            content TEXT,
-            language TEXT,
-            author_id UUID,
-            author_username TEXT,
-            is_private BOOLEAN,
-            password_hash TEXT,
-            views COUNTER,
-            created_at TIMESTAMP,
-            expires_at TIMESTAMP
-        )
-    """)
-    
-    session.execute("""
-        CREATE TABLE IF NOT EXISTS threads (
-            id UUID PRIMARY KEY,
-            paste_id UUID,
-            author_id UUID,
-            author_username TEXT,
-            content TEXT,
-            created_at TIMESTAMP
-        )
-    """)
-    
-    session.execute("""
-        CREATE TABLE IF NOT EXISTS paste_views (
-            paste_id UUID,
-            view_date DATE,
-            views COUNTER,
-            PRIMARY KEY (paste_id, view_date)
-        )
-    """)
-    
-    return session
+# Create data directories
+os.makedirs("data/users", exist_ok=True)
+os.makedirs("data/codes", exist_ok=True)
+os.makedirs("data/threads", exist_ok=True)
 
-session = get_cassandra_session()
+# JSON Database Functions
+def load_json_file(filepath: str) -> Dict[str, Any]:
+    """Load JSON file, return empty dict if file doesn't exist"""
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+def save_json_file(filepath: str, data: Dict[str, Any]) -> None:
+    """Save data to JSON file"""
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    with open(filepath, 'w', encoding='utf-8') as f:
+        json.dump(data, f, indent=2, ensure_ascii=False, default=str)
+
+def get_user_by_username(username: str) -> Optional[Dict[str, Any]]:
+    """Get user data by username"""
+    filepath = f"data/users/{username}.json"
+    user_data = load_json_file(filepath)
+    return user_data if user_data else None
+
+def save_user(username: str, user_data: Dict[str, Any]) -> None:
+    """Save user data"""
+    filepath = f"data/users/{username}.json"
+    save_json_file(filepath, user_data)
+
+def get_code_by_id(code_id: str) -> Optional[Dict[str, Any]]:
+    """Get code data by ID"""
+    filepath = f"data/codes/{code_id}.json"
+    code_data = load_json_file(filepath)
+    return code_data if code_data else None
+
+def save_code(code_id: str, code_data: Dict[str, Any]) -> None:
+    """Save code data"""
+    filepath = f"data/codes/{code_id}.json"
+    save_json_file(filepath, code_data)
+
+def get_user_codes(username: str) -> List[Dict[str, Any]]:
+    """Get all codes by user"""
+    codes = []
+    if os.path.exists("data/codes"):
+        for filename in os.listdir("data/codes"):
+            if filename.endswith(".json"):
+                code_data = load_json_file(f"data/codes/{filename}")
+                if code_data.get("author_username") == username:
+                    codes.append(code_data)
+    return sorted(codes, key=lambda x: x.get("created_at", ""), reverse=True)
+
+def get_threads_by_code_id(code_id: str) -> List[Dict[str, Any]]:
+    """Get all threads for a code"""
+    filepath = f"data/threads/{code_id}.json"
+    threads_data = load_json_file(filepath)
+    return threads_data.get("threads", [])
+
+def save_thread(code_id: str, thread_data: Dict[str, Any]) -> None:
+    """Save thread to code"""
+    filepath = f"data/threads/{code_id}.json"
+    threads_data = load_json_file(filepath)
+    if "threads" not in threads_data:
+        threads_data["threads"] = []
+    threads_data["threads"].append(thread_data)
+    save_json_file(filepath, threads_data)
+
+# Code execution functions
+def execute_code(code: str, language: str) -> Dict[str, Any]:
+    """Execute code and return result"""
+    try:
+        # Create temporary directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            if language.lower() == "python":
+                file_path = os.path.join(temp_dir, "code.py")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(code)
+                
+                # Execute Python code
+                result = subprocess.run(
+                    ["python", file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,  # 10 second timeout
+                    cwd=temp_dir
+                )
+                
+                return {
+                    "success": result.returncode == 0,
+                    "output": result.stdout,
+                    "error": result.stderr,
+                    "return_code": result.returncode
+                }
+                
+            elif language.lower() == "javascript":
+                file_path = os.path.join(temp_dir, "code.js")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(code)
+                
+                # Execute JavaScript code with Node.js
+                result = subprocess.run(
+                    ["node", file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    cwd=temp_dir
+                )
+                
+                return {
+                    "success": result.returncode == 0,
+                    "output": result.stdout,
+                    "error": result.stderr,
+                    "return_code": result.returncode
+                }
+                
+            elif language.lower() in ["bash", "shell"]:
+                file_path = os.path.join(temp_dir, "code.sh")
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    f.write(code)
+                
+                # Make executable and run
+                os.chmod(file_path, 0o755)
+                result = subprocess.run(
+                    ["bash", file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
+                    cwd=temp_dir
+                )
+                
+                return {
+                    "success": result.returncode == 0,
+                    "output": result.stdout,
+                    "error": result.stderr,
+                    "return_code": result.returncode
+                }
+            
+            else:
+                return {
+                    "success": False,
+                    "output": "",
+                    "error": f"Language '{language}' is not supported for execution",
+                    "return_code": -1
+                }
+                
+    except subprocess.TimeoutExpired:
+        return {
+            "success": False,
+            "output": "",
+            "error": "Code execution timed out (10 seconds limit)",
+            "return_code": -1
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "output": "",
+            "error": f"Execution error: {str(e)}",
+            "return_code": -1
+        }
 
 # Auth functions
 def verify_password(plain_password, hashed_password):
@@ -122,6 +223,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "database": "json_files"}
+
 # Routes
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
@@ -142,22 +247,24 @@ async def signup(
     password: str = Form(...)
 ):
     # Check if user exists
-    existing_user = session.execute(
-        "SELECT username FROM users WHERE username = ? ALLOW FILTERING",
-        [username]
-    ).one()
-    
+    existing_user = get_user_by_username(username)
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already exists")
     
     # Create user
-    user_id = uuid.uuid4()
+    user_id = str(uuid.uuid4())
     password_hash = get_password_hash(password)
     
-    session.execute("""
-        INSERT INTO users (id, username, email, password_hash, created_at, badges)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, [user_id, username, email, password_hash, datetime.now(), {'newcomer'}])
+    user_data = {
+        "id": user_id,
+        "username": username,
+        "email": email,
+        "password_hash": password_hash,
+        "created_at": datetime.now().isoformat(),
+        "badges": ["newcomer"]
+    }
+    
+    save_user(username, user_data)
     
     # Create token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -172,12 +279,9 @@ async def login(
     username: str = Form(...),
     password: str = Form(...)
 ):
-    user = session.execute(
-        "SELECT username, password_hash FROM users WHERE username = ? ALLOW FILTERING",
-        [username]
-    ).one()
+    user = get_user_by_username(username)
     
-    if not user or not verify_password(password, user.password_hash):
+    if not user or not verify_password(password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -201,70 +305,71 @@ async def create_paste(
     expires_hours: int = Form(default=0),
     current_user: str = Depends(get_current_user)
 ):
-    paste_id = uuid.uuid4()
+    paste_id = str(uuid.uuid4())
     password_hash = get_password_hash(password) if password else None
-    expires_at = datetime.now() + timedelta(hours=expires_hours) if expires_hours > 0 else None
+    expires_at = (datetime.now() + timedelta(hours=expires_hours)).isoformat() if expires_hours > 0 else None
     
     # Get user info
-    user = session.execute(
-        "SELECT id FROM users WHERE username = ? ALLOW FILTERING",
-        [current_user]
-    ).one()
+    user = get_user_by_username(current_user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    session.execute("""
-        INSERT INTO pastes (id, title, content, language, author_id, author_username, 
-                          is_private, password_hash, created_at, expires_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, [paste_id, title, content, language, user.id, current_user, 
-          is_private, password_hash, datetime.now(), expires_at])
+    paste_data = {
+        "id": paste_id,
+        "title": title,
+        "content": content,
+        "language": language,
+        "author_id": user["id"],
+        "author_username": current_user,
+        "is_private": is_private,
+        "password_hash": password_hash,
+        "views": 0,
+        "created_at": datetime.now().isoformat(),
+        "expires_at": expires_at
+    }
     
-    return {"paste_id": str(paste_id)}
+    save_code(paste_id, paste_data)
+    
+    return {"paste_id": paste_id}
 
 @app.get("/paste/{paste_id}", response_class=HTMLResponse)
-async def view_paste(request: Request, paste_id: str, password: Optional[str] = None):
-    try:
-        paste_uuid = uuid.UUID(paste_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Paste not found")
-    
-    paste = session.execute(
-        "SELECT * FROM pastes WHERE id = ?",
-        [paste_uuid]
-    ).one()
+async def view_paste(
+    request: Request, 
+    paste_id: str, 
+    password: Optional[str] = None
+):
+    paste = get_code_by_id(paste_id)
     
     if not paste:
         raise HTTPException(status_code=404, detail="Paste not found")
     
     # Check if paste is expired
-    if paste.expires_at and datetime.now() > paste.expires_at:
-        raise HTTPException(status_code=404, detail="Paste has expired")
+    if paste.get("expires_at"):
+        expires_at = datetime.fromisoformat(paste["expires_at"])
+        if datetime.now() > expires_at:
+            raise HTTPException(status_code=404, detail="Paste has expired")
     
     # Check password protection
-    if paste.password_hash and not password:
+    if paste.get("password_hash") and not password:
         return templates.TemplateResponse("password.html", {
             "request": request, 
             "paste_id": paste_id
         })
     
-    if paste.password_hash and not verify_password(password, paste.password_hash):
+    if paste.get("password_hash") and not verify_password(password, paste["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid password")
     
     # Increment views
-    session.execute(
-        "UPDATE pastes SET views = views + 1 WHERE id = ?",
-        [paste_uuid]
-    )
+    paste["views"] = paste.get("views", 0) + 1
+    save_code(paste_id, paste)
     
     # Get threads
-    threads = session.execute(
-        "SELECT * FROM threads WHERE paste_id = ? ALLOW FILTERING",
-        [paste_uuid]
-    )
+    threads = get_threads_by_code_id(paste_id)
     
     return templates.TemplateResponse("paste.html", {
         "request": request,
         "paste": paste,
-        "threads": list(threads)
+        "threads": threads
     })
 
 @app.post("/api/thread")
@@ -273,59 +378,60 @@ async def create_thread(
     content: str = Form(...),
     current_user: str = Depends(get_current_user)
 ):
-    try:
-        paste_uuid = uuid.UUID(paste_id)
-    except ValueError:
+    # Check if paste exists
+    paste = get_code_by_id(paste_id)
+    if not paste:
         raise HTTPException(status_code=404, detail="Paste not found")
     
     # Get user info
-    user = session.execute(
-        "SELECT id FROM users WHERE username = ? ALLOW FILTERING",
-        [current_user]
-    ).one()
+    user = get_user_by_username(current_user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
     
-    thread_id = uuid.uuid4()
-    session.execute("""
-        INSERT INTO threads (id, paste_id, author_id, author_username, content, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """, [thread_id, paste_uuid, user.id, current_user, content, datetime.now()])
+    thread_data = {
+        "id": str(uuid.uuid4()),
+        "paste_id": paste_id,
+        "author_id": user["id"],
+        "author_username": current_user,
+        "content": content,
+        "created_at": datetime.now().isoformat()
+    }
     
-    return {"thread_id": str(thread_id)}
+    save_thread(paste_id, thread_data)
+    
+    return {"thread_id": thread_data["id"]}
+
+@app.post("/api/execute")
+async def execute_code_endpoint(
+    code: str = Form(...),
+    language: str = Form(...),
+    current_user: str = Depends(get_current_user)
+):
+    """Execute code and return result"""
+    result = execute_code(code, language)
+    return result
 
 @app.get("/api/paste/{paste_id}/stats")
 async def get_paste_stats(paste_id: str):
-    try:
-        paste_uuid = uuid.UUID(paste_id)
-    except ValueError:
-        raise HTTPException(status_code=404, detail="Paste not found")
-    
-    paste = session.execute(
-        "SELECT views FROM pastes WHERE id = ?",
-        [paste_uuid]
-    ).one()
+    paste = get_code_by_id(paste_id)
     
     if not paste:
         raise HTTPException(status_code=404, detail="Paste not found")
     
-    return {"views": paste.views}
+    return {"views": paste.get("views", 0)}
 
 @app.get("/dashboard", response_class=HTMLResponse)
-async def dashboard(request: Request, current_user: str = Depends(get_current_user)):
+async def dashboard(
+    request: Request, 
+    current_user: str = Depends(get_current_user)
+):
     # Get user's pastes
-    user = session.execute(
-        "SELECT id FROM users WHERE username = ? ALLOW FILTERING",
-        [current_user]
-    ).one()
-    
-    pastes = session.execute(
-        "SELECT * FROM pastes WHERE author_id = ? ALLOW FILTERING",
-        [user.id]
-    )
+    pastes = get_user_codes(current_user)
     
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "user": current_user,
-        "pastes": list(pastes)
+        "pastes": pastes
     })
 
 if __name__ == "__main__":
