@@ -1,6 +1,6 @@
 # code share - Code Sharing Platform
 
-Platform cepat untuk berbagi paste, kode, dan thread diskusi yang terinspirasi dari Lunox.io.
+Platform cepat untuk berbagi paste, kode, dan thread diskusi 
 
 ## Fitur
 
