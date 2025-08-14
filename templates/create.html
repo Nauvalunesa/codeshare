@@ -3,20 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Paste - Lunox Clone</title>
+    <title>Create Paste - CodeShare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .toolbar {
             display: flex;
@@ -47,47 +47,81 @@
             color: white;
             font-family: 'Courier New', monospace;
         }
+        /* Added file upload styling */
+        .file-upload-area {
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .file-upload-area:hover, .file-upload-area.dragover {
+            border-color: rgba(102, 126, 234, 0.8);
+            background: rgba(102, 126, 234, 0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
     </style>
 </head>
 <body class="text-white">
-    <nav class="glass p-4 mb-8">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold">Lunox Clone</a>
-            <div class="space-x-4">
-                <a href="/dashboard" class="hover:text-blue-300">Dashboard</a>
-                <a href="/create" class="hover:text-blue-300">Create</a>
-                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">Logout</button>
+    <nav class="glass p-4 mb-8 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">CodeShare</a>
+            <div class="flex flex-wrap justify-center space-x-2 sm:space-x-4">
+                <a href="/dashboard" class="hover:text-blue-300 px-3 py-1 rounded transition-colors">Dashboard</a>
+                <a href="/create" class="hover:text-blue-300 px-3 py-1 rounded transition-colors">Create</a>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="max-w-4xl mx-auto px-4">
-        <div class="glass rounded-lg p-8">
-            <h2 class="text-3xl font-bold mb-6 text-center">Create New Paste</h2>
+        <div class="glass rounded-lg p-4 sm:p-8">
+            <h2 class="text-2xl sm:text-3xl font-bold mb-6 text-center bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Create New Paste</h2>
             
-            <form id="pasteForm" class="space-y-6">
+            <form id="pasteForm" class="space-y-6" enctype="multipart/form-data">
                 <div>
                     <label for="title" class="block text-sm font-medium mb-2">Title</label>
                     <input type="text" id="title" name="title" required
                            class="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 
-                <div>
-                    <label for="language" class="block text-sm font-medium mb-2">Language</label>
-                    <select id="language" name="language"
-                            class="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="text">Plain Text</option>
-                        <option value="javascript">JavaScript</option>
-                        <option value="python">Python</option>
-                        <option value="java">Java</option>
-                        <option value="cpp">C++</option>
-                        <option value="html">HTML</option>
-                        <option value="css">CSS</option>
-                        <option value="sql">SQL</option>
-                        <option value="json">JSON</option>
-                        <option value="xml">XML</option>
-                        <option value="bash">Bash</option>
-                    </select>
+                <div class="grid sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="language" class="block text-sm font-medium mb-2">Language</label>
+                        <select id="language" name="language"
+                                class="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="text">Plain Text</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="sql">SQL</option>
+                            <option value="json">JSON</option>
+                            <option value="xml">XML</option>
+                            <option value="bash">Bash</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Added file upload section -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Upload File (Optional)</label>
+                        <div class="file-upload-area" onclick="document.getElementById('file').click()">
+                            <input type="file" id="file" name="file" accept=".txt,.py,.js,.html,.css,.java,.cpp,.c,.sql,.json,.xml,.sh,.md" class="hidden">
+                            <div id="file-info">
+                                <span class="text-gray-400">📁 Click or drag file here</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div>
@@ -102,14 +136,14 @@
                     </div>
                     <textarea id="content" name="content" required
                               class="rich-editor w-full resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                              placeholder="Paste your code or text here..."></textarea>
+                              placeholder="Paste your code or text here, or upload a file above..."></textarea>
                     <div id="output" class="mt-4 p-4 bg-gray-900 rounded-lg hidden">
                         <h4 class="text-sm font-medium mb-2">Output:</h4>
-                        <pre id="output-content" class="text-green-400 text-sm"></pre>
+                        <pre id="output-content" class="text-green-400 text-sm whitespace-pre-wrap"></pre>
                     </div>
                 </div>
                 
-                <div class="grid md:grid-cols-3 gap-4">
+                <div class="grid sm:grid-cols-3 gap-4">
                     <div class="flex items-center">
                         <input type="checkbox" id="is_private" name="is_private" class="mr-2">
                         <label for="is_private" class="text-sm">Private paste</label>
@@ -128,14 +162,76 @@
                     </div>
                 </div>
                 
-                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-3 px-4 rounded-lg font-medium text-lg transition-all hover:scale-105">
-                    Create Paste
+                <button type="submit" class="w-full btn-primary py-3 px-4 rounded-lg font-medium text-lg">
+                    🚀 Create Paste
                 </button>
             </form>
         </div>
     </div>
 
     <script>
+        const fileInput = document.getElementById('file');
+        const fileInfo = document.getElementById('file-info');
+        const contentTextarea = document.getElementById('content');
+        const languageSelect = document.getElementById('language');
+        const fileUploadArea = document.querySelector('.file-upload-area');
+
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // Drag and drop functionality
+        fileUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.add('dragover');
+        });
+        
+        fileUploadArea.addEventListener('dragleave', () => {
+            fileUploadArea.classList.remove('dragover');
+        });
+        
+        fileUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileSelect();
+            }
+        });
+
+        function handleFileSelect() {
+            const file = fileInput.files[0];
+            if (file) {
+                fileInfo.innerHTML = `<span class="text-green-400">📄 ${file.name}</span>`;
+                
+                // Auto-detect language from file extension
+                const ext = file.name.split('.').pop().toLowerCase();
+                const languageMap = {
+                    'py': 'python', 'js': 'javascript', 'html': 'html',
+                    'css': 'css', 'java': 'java', 'cpp': 'cpp', 'c': 'cpp',
+                    'sql': 'sql', 'json': 'json', 'xml': 'xml', 'sh': 'bash',
+                    'md': 'markdown', 'txt': 'text'
+                };
+                
+                if (languageMap[ext]) {
+                    languageSelect.value = languageMap[ext];
+                }
+                
+                // Read file content and preview
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const content = e.target.result;
+                    if (content.length < 10000) { // Only preview small files
+                        contentTextarea.value = content;
+                    } else {
+                        contentTextarea.placeholder = `File loaded: ${file.name} (${(file.size/1024).toFixed(1)}KB)`;
+                    }
+                };
+                reader.readAsText(file);
+            } else {
+                fileInfo.innerHTML = '<span class="text-gray-400">📁 Click or drag file here</span>';
+            }
+        }
+
         async function runCode() {
             const content = document.getElementById('content').value;
             const language = document.getElementById('language').value;
@@ -167,14 +263,14 @@
                 
                 if (response.ok) {
                     outputContent.textContent = data.output || 'No output';
-                    outputContent.className = data.error ? 'text-red-400 text-sm' : 'text-green-400 text-sm';
+                    outputContent.className = data.error ? 'text-red-400 text-sm whitespace-pre-wrap' : 'text-green-400 text-sm whitespace-pre-wrap';
                 } else {
                     outputContent.textContent = data.detail || 'Error running code';
-                    outputContent.className = 'text-red-400 text-sm';
+                    outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
                 }
             } catch (error) {
                 outputContent.textContent = 'Failed to run code: ' + error.message;
-                outputContent.className = 'text-red-400 text-sm';
+                outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
             }
         }
 

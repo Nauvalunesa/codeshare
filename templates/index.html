@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lunox Clone - Code Sharing Platform</title>
+    <title>CodeShare - Platform Cepat untuk Berbagi Kode</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body {
@@ -142,6 +142,17 @@
             from, to { border-color: transparent; }
             50% { border-color: #667eea; }
         }
+
+        /* Added responsive improvements */
+        @media (max-width: 640px) {
+            .hero-gradient {
+                font-size: 2.5rem;
+                line-height: 1.1;
+            }
+            .feature-card {
+                padding: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body class="text-gray-100 min-h-screen">
@@ -153,27 +164,27 @@
 
     <nav class="bg-black/20 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold hero-gradient">Lunox Clone</a>
+            <div class="flex flex-col sm:flex-row justify-between h-auto sm:h-16 py-2 sm:py-0">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <a href="/" class="text-2xl font-bold hero-gradient">CodeShare</a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/create" class="btn-primary px-6 py-2 rounded-full text-sm font-medium relative">
+                <div class="flex items-center justify-center space-x-2 sm:space-x-4 mt-2 sm:mt-0">
+                    <a href="/create" class="btn-primary px-4 sm:px-6 py-2 rounded-full text-sm font-medium relative">
                         Create Paste
                     </a>
                     <div id="auth-buttons">
-                        <a href="/login" class="text-gray-300 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
+                        <a href="/login" class="text-gray-300 hover:text-white px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-colors">
                             Login
                         </a>
-                        <a href="/signup" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-6 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105">
+                        <a href="/signup" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-4 sm:px-6 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105">
                             Sign Up
                         </a>
                     </div>
                     <div id="user-menu" class="hidden">
-                        <a href="/dashboard" class="text-gray-300 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
+                        <a href="/dashboard" class="text-gray-300 hover:text-white px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-colors">
                             Dashboard
                         </a>
-                        <button onclick="logout()" class="text-gray-300 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors">
+                        <button onclick="logout()" class="text-gray-300 hover:text-white px-3 sm:px-4 py-2 rounded-full text-sm font-medium transition-colors">
                             Logout
                         </button>
                     </div>
@@ -184,34 +195,34 @@
 
     <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <!-- Hero Section -->
-        <div class="px-4 py-20 text-center">
-            <h1 class="text-6xl md:text-7xl font-bold mb-8 hero-gradient leading-tight">
-                Platform Cepat untuk<br>Berbagi Kode
+        <div class="px-4 py-12 sm:py-20 text-center">
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 sm:mb-8 hero-gradient leading-tight">
+                Platform Cepat untuk<br class="hidden sm:block">Berbagi Kode
             </h1>
-            <p class="text-xl md:text-2xl text-gray-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p class="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
                 Buka, tulis, bagikan. Selesai.<br>
                 <span class="text-purple-400">Platform modern</span> untuk berbagi paste, kode, dan diskusi dengan fitur lengkap.
             </p>
             
-            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-16">
-                <a href="/create" class="btn-primary px-10 py-4 rounded-full text-lg font-medium relative">
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12 sm:mb-16 px-4">
+                <a href="/create" class="btn-primary px-8 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium relative w-full sm:w-auto text-center">
                     🚀 Mulai Berbagi Sekarang
                 </a>
-                <a href="#features" class="border border-purple-500/50 hover:border-purple-400 px-10 py-4 rounded-full text-lg font-medium hover:bg-purple-500/10 transition-all transform hover:scale-105">
+                <a href="#features" class="border border-purple-500/50 hover:border-purple-400 px-8 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium hover:bg-purple-500/10 transition-all transform hover:scale-105 w-full sm:w-auto text-center">
                     ✨ Lihat Fitur
                 </a>
             </div>
 
             <!-- Code Preview Demo -->
-            <div class="max-w-2xl mx-auto mb-20">
+            <div class="max-w-2xl mx-auto mb-12 sm:mb-20 px-4">
                 <div class="code-preview">
                     <div class="pt-8">
-                        <div class="text-green-400 mb-2"># Python Example</div>
-                        <div class="typing-animation text-blue-300">
-                            def hello_lunox():
+                        <div class="text-green-400 mb-2 text-sm sm:text-base"># Python Example</div>
+                        <div class="typing-animation text-blue-300 text-sm sm:text-base">
+                            def hello_codeshare():
                         </div>
-                        <div class="text-yellow-300 ml-4 mt-1">
-                            print("Welcome to Lunox Clone! 🎉")
+                        <div class="text-yellow-300 ml-4 mt-1 text-sm sm:text-base">
+                            print("Welcome to CodeShare! 🎉")
                         </div>
                     </div>
                 </div>
@@ -219,55 +230,55 @@
         </div>
 
         <!-- Features Section -->
-        <div id="features" class="px-4 py-16">
-            <h2 class="text-4xl font-bold text-center mb-4 hero-gradient">Fitur Unggulan</h2>
-            <p class="text-center text-gray-400 mb-16 text-lg">Semua yang Anda butuhkan untuk berbagi kode dengan mudah</p>
+        <div id="features" class="px-4 py-12 sm:py-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-4 hero-gradient">Fitur Unggulan</h2>
+            <p class="text-center text-gray-400 mb-12 sm:mb-16 text-base sm:text-lg px-4">Semua yang Anda butuhkan untuk berbagi kode dengan mudah</p>
             
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">📝</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">Rich Text Editor</h3>
-                    <p class="text-gray-400 leading-relaxed">Editor lengkap dengan bold, list, code block, syntax highlighting, dan formatting lainnya.</p>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">📝</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Rich Text Editor</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Editor lengkap dengan bold, list, code block, syntax highlighting, dan formatting lainnya.</p>
                 </div>
                 
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">🔒</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">Paste & Code Friendly</h3>
-                    <p class="text-gray-400 leading-relaxed">Link publik/pribadi dengan proteksi password untuk keamanan maksimal.</p>
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">📁</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Upload File</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Upload file kode langsung dengan drag & drop, auto-detect bahasa pemrograman.</p>
                 </div>
                 
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">💬</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">Thread Diskusi</h3>
-                    <p class="text-gray-400 leading-relaxed">Sistem thread untuk diskusi dan tanya jawab pada setiap paste.</p>
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">🔒</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Paste & Code Friendly</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Link publik/pribadi dengan proteksi password untuk keamanan maksimal.</p>
                 </div>
                 
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">⚡</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">Test Run Code</h3>
-                    <p class="text-gray-400 leading-relaxed">Jalankan kode Python, JavaScript, dan Bash langsung di browser.</p>
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">💬</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Thread Diskusi</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Sistem thread untuk diskusi dan tanya jawab pada setiap paste.</p>
                 </div>
                 
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">🎨</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">UI Modern</h3>
-                    <p class="text-gray-400 leading-relaxed">Interface yang nyaman dan enak dilihat dengan dark theme yang elegan.</p>
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">⚡</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Test Run Code</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Jalankan kode Python, JavaScript, dan Bash langsung di browser.</p>
                 </div>
                 
-                <div class="feature-card p-8 rounded-2xl">
-                    <div class="text-4xl mb-6">🚀</div>
-                    <h3 class="text-xl font-semibold mb-4 text-purple-300">Cepat & Mudah</h3>
-                    <p class="text-gray-400 leading-relaxed">Proses yang simpel: buka, tulis, bagikan. Selesai dalam hitungan detik!</p>
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">🚀</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Cepat & Mudah</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Proses yang simpel: buka, tulis, bagikan. Selesai dalam hitungan detik!</p>
                 </div>
             </div>
         </div>
 
         <!-- CTA Section -->
-        <div class="px-4 py-20 text-center">
+        <div class="px-4 py-12 sm:py-20 text-center">
             <div class="max-w-3xl mx-auto">
-                <h2 class="text-4xl font-bold mb-6 hero-gradient">Siap Mulai Berbagi?</h2>
-                <p class="text-xl text-gray-300 mb-8">Bergabunglah dengan ribuan developer yang sudah menggunakan Lunox Clone</p>
-                <a href="/create" class="btn-primary px-12 py-4 rounded-full text-xl font-medium relative inline-block">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6 hero-gradient">Siap Mulai Berbagi?</h2>
+                <p class="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4">Bergabunglah dengan ribuan developer yang sudah menggunakan CodeShare</p>
+                <a href="/create" class="btn-primary px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium relative inline-block">
                     🎯 Buat Paste Pertama Anda
                 </a>
             </div>
@@ -313,10 +324,12 @@
         // Restart typing animation every 5 seconds
         setInterval(() => {
             const typingElement = document.querySelector('.typing-animation');
-            typingElement.style.animation = 'none';
-            setTimeout(() => {
-                typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
-            }, 100);
+            if (typingElement) {
+                typingElement.style.animation = 'none';
+                setTimeout(() => {
+                    typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
+                }, 100);
+            }
         }, 5000);
     </script>
 </body>

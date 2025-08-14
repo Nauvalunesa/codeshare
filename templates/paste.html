@@ -3,60 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ paste.title }} - Lunox Clone</title>
+    <title>{{ paste.title }} - CodeShare</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
             min-height: 100vh;
         }
         .glass {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         pre[class*="language-"] {
             background: rgba(17, 24, 39, 0.8) !important;
             border-radius: 8px;
         }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
     </style>
 </head>
 <body class="text-white">
-    <nav class="glass p-4 mb-8">
-        <div class="max-w-6xl mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold">Lunox Clone</a>
-            <div class="space-x-4">
-                <a href="/dashboard" class="hover:text-blue-300">Dashboard</a>
-                <a href="/create" class="hover:text-blue-300">Create</a>
-                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">Logout</button>
+    <nav class="glass p-4 mb-8 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+            <a href="/" class="text-2xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">CodeShare</a>
+            <div class="flex flex-wrap justify-center space-x-2 sm:space-x-4">
+                <a href="/dashboard" class="hover:text-blue-300 px-3 py-1 rounded transition-colors">Dashboard</a>
+                <a href="/create" class="hover:text-blue-300 px-3 py-1 rounded transition-colors">Create</a>
+                <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded transition-colors">Logout</button>
             </div>
         </div>
     </nav>
 
     <div class="max-w-6xl mx-auto px-4">
-        <div class="glass rounded-lg p-6 mb-6">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-white mb-2">{{ paste.title }}</h1>
+        <div class="glass rounded-lg p-4 sm:p-6 mb-6">
+            <div class="flex flex-col lg:flex-row justify-between items-start mb-4 space-y-4 lg:space-y-0">
+                <div class="flex-1">
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white mb-2">{{ paste.title }}</h1>
                     <p class="text-gray-300 text-sm">
                         By <span class="text-blue-300">{{ paste.author_username }}</span> • 
-                        {{ paste.created_at.strftime('%Y-%m-%d %H:%M') }}
+                        <!-- Fixed strftime error by parsing ISO string -->
+                        {% set created_date = paste.created_at[:19] %}
+                        {{ created_date.replace('T', ' ') }}
                         {% if paste.language != 'text' %} • <span class="bg-blue-600 px-2 py-1 rounded text-xs">{{ paste.language }}</span>{% endif %}
                     </p>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex flex-wrap items-center gap-2">
                     <div class="flex items-center text-gray-300">
                         <span class="text-sm">👁️ <span id="view-count">{{ paste.views or 0 }}</span> views</span>
                     </div>
-                    <button onclick="copyToClipboard()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg text-sm transition-all">
+                    <button onclick="copyToClipboard()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
                         📋 Copy Link
                     </button>
                     <!-- Added run code button for executable languages -->
                     {% if paste.language in ['python', 'javascript', 'bash'] %}
-                    <button onclick="runCode()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg text-sm transition-all">
+                    <button onclick="runCode()" class="btn-primary px-3 py-2 rounded-lg text-sm">
                         ▶ Run Code
                     </button>
                     {% endif %}
@@ -70,20 +80,20 @@
             <!-- Added output section for code execution -->
             <div id="output" class="mt-4 p-4 bg-gray-900/80 rounded-lg hidden">
                 <h4 class="text-sm font-medium mb-2">Output:</h4>
-                <pre id="output-content" class="text-green-400 text-sm"></pre>
+                <pre id="output-content" class="text-green-400 text-sm whitespace-pre-wrap"></pre>
             </div>
         </div>
         
         <!-- Thread Section -->
-        <div class="glass rounded-lg p-6">
+        <div class="glass rounded-lg p-4 sm:p-6">
             <h3 class="text-xl font-semibold mb-4">💬 Discussion Thread</h3>
             
             <form id="threadForm" class="mb-6">
                 <input type="hidden" name="paste_id" value="{{ paste.id }}">
                 <textarea name="content" required placeholder="Add your comment..."
-                          class="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3"
+                          class="w-full px-4 py-3 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 mb-3 resize-none"
                           rows="3"></textarea>
-                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded-lg transition-all hover:scale-105">
+                <button type="submit" class="btn-primary px-6 py-2 rounded-lg">
                     Post Comment
                 </button>
             </form>
@@ -91,9 +101,11 @@
             <div id="threads" class="space-y-4">
                 {% for thread in threads %}
                 <div class="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
-                    <div class="flex justify-between items-start mb-2">
+                    <div class="flex flex-col sm:flex-row justify-between items-start mb-2 space-y-1 sm:space-y-0">
                         <span class="font-medium text-blue-300">{{ thread.author_username }}</span>
-                        <span class="text-gray-400 text-sm">{{ thread.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                        <!-- Fixed strftime error for thread dates -->
+                        {% set thread_date = thread.created_at[:19] %}
+                        <span class="text-gray-400 text-sm">{{ thread_date.replace('T', ' ') }}</span>
                     </div>
                     <p class="text-gray-200">{{ thread.content }}</p>
                 </div>
@@ -140,14 +152,14 @@
                 
                 if (response.ok) {
                     outputContent.textContent = data.output || 'No output';
-                    outputContent.className = data.error ? 'text-red-400 text-sm' : 'text-green-400 text-sm';
+                    outputContent.className = data.error ? 'text-red-400 text-sm whitespace-pre-wrap' : 'text-green-400 text-sm whitespace-pre-wrap';
                 } else {
                     outputContent.textContent = data.detail || 'Error running code';
-                    outputContent.className = 'text-red-400 text-sm';
+                    outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
                 }
             } catch (error) {
                 outputContent.textContent = 'Failed to run code: ' + error.message;
-                outputContent.className = 'text-red-400 text-sm';
+                outputContent.className = 'text-red-400 text-sm whitespace-pre-wrap';
             }
         }
 

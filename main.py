@@ -22,7 +22,7 @@ import shutil
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="Lunox Clone - Code Sharing Platform")
+app = FastAPI(title="CodeShare - Code Sharing Platform")
 
 # Security
 SECRET_KEY = config("SECRET_KEY", default="your-secret-key-here")
@@ -102,6 +102,14 @@ def save_thread(code_id: str, thread_data: Dict[str, Any]) -> None:
         threads_data["threads"] = []
     threads_data["threads"].append(thread_data)
     save_json_file(filepath, threads_data)
+
+def save_uploaded_file(file: UploadFile) -> str:
+    """Save uploaded file and return content"""
+    try:
+        content = file.file.read().decode('utf-8')
+        return content
+    except UnicodeDecodeError:
+        raise HTTPException(status_code=400, detail="File must be text-based")
 
 # Code execution functions
 def execute_code(code: str, language: str) -> Dict[str, Any]:
@@ -298,16 +306,35 @@ async def create_paste_page(request: Request):
 @app.post("/api/paste")
 async def create_paste(
     title: str = Form(...),
-    content: str = Form(...),
+    content: str = Form(default=""),
     language: str = Form(default="text"),
     is_private: bool = Form(default=False),
     password: Optional[str] = Form(default=None),
     expires_hours: int = Form(default=0),
+    file: Optional[UploadFile] = File(default=None),
     current_user: str = Depends(get_current_user)
 ):
     paste_id = str(uuid.uuid4())
     password_hash = get_password_hash(password) if password else None
     expires_at = (datetime.now() + timedelta(hours=expires_hours)).isoformat() if expires_hours > 0 else None
+    
+    # Handle file upload
+    final_content = content
+    if file and file.filename:
+        try:
+            file_content = save_uploaded_file(file)
+            final_content = file_content if not content else content + "\n\n" + file_content
+            # Auto-detect language from file extension if not specified
+            if language == "text" and file.filename:
+                ext = file.filename.split('.')[-1].lower()
+                language_map = {
+                    'py': 'python', 'js': 'javascript', 'html': 'html',
+                    'css': 'css', 'java': 'java', 'cpp': 'cpp', 'c': 'c',
+                    'sql': 'sql', 'json': 'json', 'xml': 'xml', 'sh': 'bash'
+                }
+                language = language_map.get(ext, 'text')
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
     
     # Get user info
     user = get_user_by_username(current_user)
@@ -317,7 +344,7 @@ async def create_paste(
     paste_data = {
         "id": paste_id,
         "title": title,
-        "content": content,
+        "content": final_content,
         "language": language,
         "author_id": user["id"],
         "author_username": current_user,
@@ -401,15 +428,27 @@ async def create_thread(
     
     return {"thread_id": thread_data["id"]}
 
-@app.post("/api/execute")
+@app.post("/api/run-code")
 async def execute_code_endpoint(
-    code: str = Form(...),
-    language: str = Form(...),
-    current_user: str = Depends(get_current_user)
+    request: Request
 ):
     """Execute code and return result"""
-    result = execute_code(code, language)
-    return result
+    try:
+        data = await request.json()
+        code = data.get("code", "")
+        language = data.get("language", "text")
+        
+        if not code.strip():
+            raise HTTPException(status_code=400, detail="No code provided")
+        
+        result = execute_code(code, language)
+        
+        return {
+            "output": result["output"] if result["success"] else result["error"],
+            "error": not result["success"]
+        }
+    except Exception as e:
+        return {"output": f"Error: {str(e)}", "error": True}
 
 @app.get("/api/paste/{paste_id}/stats")
 async def get_paste_stats(paste_id: str):
