@@ -33,7 +33,11 @@ python run.py
 \`\`\`
 
 Aplikasi akan berjalan di `http://localhost:8000`
+### USERNAME & PASWORD ADMIN
+- username admin
+- pasword admin123
 
+ - **harap ganti password/username bawaan**
 ## Struktur Database
 
 ### Users Table
