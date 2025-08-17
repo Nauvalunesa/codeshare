@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - CodeShare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        .glass:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+        .admin-panel {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(220, 38, 38, 0.1) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            backdrop-filter: blur(20px);
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .badge-verified::after {
+            content: "✓";
+            color: #3b82f6;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+        .search-container {
+            position: relative;
+        }
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        /* Enhanced badge styles for better visual hierarchy */
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-newcomer { background: rgba(107, 114, 128, 0.2); color: rgb(156, 163, 175); border-color: rgba(107, 114, 128, 0.3); }
+        .badge-member { background: rgba(34, 197, 94, 0.2); color: rgb(74, 222, 128); border-color: rgba(34, 197, 94, 0.3); }
+        .badge-verified { background: rgba(59, 130, 246, 0.2); color: rgb(96, 165, 250); border-color: rgba(59, 130, 246, 0.3); }
+        .badge-pro { background: rgba(147, 51, 234, 0.2); color: rgb(196, 181, 253); border-color: rgba(147, 51, 234, 0.3); }
+        .badge-expert { background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border-color: rgba(249, 115, 22, 0.3); }
+        .badge-legend { background: rgba(239, 68, 68, 0.2); color: rgb(248, 113, 113); border-color: rgba(239, 68, 68, 0.3); }
+        .badge-popular { background: rgba(236, 72, 153, 0.2); color: rgb(244, 114, 182); border-color: rgba(236, 72, 153, 0.3); }
+        .badge-prolific { background: rgba(99, 102, 241, 0.2); color: rgb(129, 140, 248); border-color: rgba(99, 102, 241, 0.3); }
+        .badge-admin { background: rgba(220, 38, 38, 0.2); color: rgb(248, 113, 113); border-color: rgba(220, 38, 38, 0.3); }
+        
+        .verification-check {
+            color: #3b82f6;
+            font-size: 0.875rem;
+            margin-left: 0.25rem;
+        }
+
+        /* Enhanced button styles with better gradients and hover effects */
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Enhanced card animations and visual effects */
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 0 25px 50px -12px rgba(102, 126, 234, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* Mobile responsive improvements */
+        @media (max-width: 640px) {
+            .search-container {
+                width: 100%;
+            }
+            .search-container input {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Enhanced header with better responsive design and improved search -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-4xl font-bold bg-gradient-to-r from-purple-400 via-blue-400 to-emerald-400 bg-clip-text text-transparent">Dashboard</h1>
+                <p class="text-white/70 text-lg" id="welcome-text">Loading...</p>
+            </div>
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
+                <!-- Enhanced search functionality with better mobile support and comprehensive search -->
+                <div class="search-container w-full sm:w-auto">
+                    <div class="relative">
+                        <input type="text" id="search-input" placeholder="Cari username, nama paste, kode, bahasa..." 
+                               class="bg-white/10 border border-white/20 rounded-full px-4 py-2 pr-10 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full sm:w-72 transition-all focus:w-full sm:focus:w-96">
+                        <button onclick="performAdvancedSearch()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-500/20 hover:bg-purple-500/40 p-1.5 rounded-full text-sm transition-all">
+                            🔍
+                        </button>
+                    </div>
+                    <div id="search-results" class="search-results hidden"></div>
+                </div>
+                <!-- Enhanced profile and navigation buttons -->
+                <button onclick="showProfileEdit()" class="btn-primary px-6 py-2 rounded-full font-medium shadow-lg">
+                    ✏️ Edit Profil
+                </button>
+                
+                <a href="/create" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 py-2 rounded-full transition-all font-medium shadow-lg text-center">
+                    📝 Buat Paste Baru
+                </a>
+                <button onclick="logout()" class="bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 px-6 py-2 rounded-full transition-all font-medium shadow-lg">
+                    🚪 Keluar
+                </button>
+            </div>
+        </div>
+
+        <!-- Enhanced profile edit modal with better styling -->
+        <div id="profile-modal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div class="glass rounded-2xl p-8 max-w-md w-full mx-4 border border-purple-500/20">
+                <h2 class="text-2xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">Edit Profil</h2>
+                <form id="profile-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-purple-300">Nama Lengkap</label>
+                        <input type="text" id="profile-name" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-purple-300">Username</label>
+                        <input type="text" id="profile-username" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2 text-purple-300">Password Baru (kosongkan jika tidak ingin mengubah)</label>
+                        <input type="password" id="profile-password" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                    </div>
+                    <div class="flex gap-3 pt-4">
+                        <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
+                            💾 Simpan
+                        </button>
+                        <button type="button" onclick="hideProfileEdit()" class="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
+                            ❌ Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loading" class="text-center py-12">
+            <div class="loading mx-auto mb-4"></div>
+            <p class="text-lg">Memuat dashboard Anda...</p>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="hidden glass rounded-lg p-8 text-center">
+            <h2 class="text-2xl font-semibold mb-4">Autentikasi Diperlukan</h2>
+            <p class="mb-6 text-white/80">Silakan masuk untuk mengakses dashboard Anda.</p>
+            <a href="/login" class="bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 px-8 py-3 rounded-lg transition-all font-medium shadow-lg">
+                Masuk Sekarang
+            </a>
+        </div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard-content" class="hidden">
+            <!-- Enhanced admin panel with better visual design and more features -->
+            <div id="admin-panel" class="hidden admin-panel rounded-2xl p-6 mb-8 border-2 border-red-500/30">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2 text-red-300">
+                    👑 Panel Admin
+                    <span class="text-sm bg-red-500/20 px-2 py-1 rounded-full">ADMIN ONLY</span>
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <button onclick="showAllUsers()" class="feature-card p-4 rounded-xl transition-all hover:scale-105">
+                        <div class="text-3xl mb-2">👥</div>
+                        <div class="font-medium">Kelola User</div>
+                        <div class="text-xs text-white/60 mt-1">Verifikasi & Promosi</div>
+                    </button>
+                    <button onclick="showAllPastes()" class="feature-card p-4 rounded-xl transition-all hover:scale-105">
+                        <div class="text-3xl mb-2">📝</div>
+                        <div class="font-medium">Kelola Paste</div>
+                        <div class="text-xs text-white/60 mt-1">Moderasi Konten</div>
+                    </button>
+                    <button onclick="showBadgeManagement()" class="feature-card p-4 rounded-xl transition-all hover:scale-105">
+                        <div class="text-3xl mb-2">🏆</div>
+                        <div class="font-medium">Kelola Badge</div>
+                        <div class="text-xs text-white/60 mt-1">Sistem Reward</div>
+                    </button>
+                    <button onclick="showSystemStats()" class="feature-card p-4 rounded-xl transition-all hover:scale-105">
+                        <div class="text-3xl mb-2">📊</div>
+                        <div class="font-medium">Statistik</div>
+                        <div class="text-xs text-white/60 mt-1">Analytics Platform</div>
+                    </button>
+                </div>
+                <div id="admin-content" class="bg-black/20 rounded-xl p-4 min-h-32 border border-white/10"></div>
+            </div>
+
+            <!-- Enhanced stats cards with better visual design -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="feature-card rounded-2xl p-6 hover:scale-105 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-purple-300">Total Paste</h3>
+                            <p class="text-3xl font-bold text-blue-400" id="total-pastes">0</p>
+                        </div>
+                        <div class="text-4xl text-blue-400">📝</div>
+                    </div>
+                </div>
+                <div class="feature-card rounded-2xl p-6 hover:scale-105 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-purple-300">Total Views</h3>
+                            <p class="text-3xl font-bold text-green-400" id="total-views">0</p>
+                        </div>
+                        <div class="text-4xl text-green-400">👁️</div>
+                    </div>
+                </div>
+                <div class="feature-card rounded-2xl p-6 hover:scale-105 transition-all">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-lg font-semibold mb-2 text-purple-300">Badge Saya</h3>
+                            <div id="badges" class="flex flex-wrap gap-2"></div>
+                        </div>
+                        <div class="text-4xl text-yellow-400">🏆</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced pastes list with better card design -->
+            <div class="glass rounded-2xl p-6 mb-8">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                    📋 Paste Saya
+                </h2>
+                <div id="pastes-list"></div>
+            </div>
+
+            <!-- Enhanced public pastes section -->
+            <div class="glass rounded-2xl p-6">
+                <h2 class="text-2xl font-semibold mb-6 flex items-center gap-2 bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+                    🌍 Paste Publik Terbaru
+                </h2>
+                <div id="public-pastes-list">
+                    <div class="text-center py-8">
+                        <div class="loading mx-auto mb-4"></div>
+                        <p class="text-white/70">Memuat paste publik...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        document.getElementById('search-input').addEventListener('input', debounce(performSearch, 300));
+        document.getElementById('search-input').addEventListener('focus', () => {
+            if (document.getElementById('search-results').innerHTML) {
+                document.getElementById('search-results').classList.remove('hidden');
+            }
+        });
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-container')) {
+                document.getElementById('search-results').classList.add('hidden');
+            }
+        });
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        async function performSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            const resultsContainer = document.getElementById('search-results');
+            
+            if (query.length < 2) {
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search?q=${encodeURIComponent(query)}&limit=15&include_content=true`);
+                if (!response.ok) throw new Error('Search failed');
+                
+                const data = await response.json();
+                displaySearchResults(data);
+            } catch (error) {
+                console.error('Search error:', error);
+                resultsContainer.innerHTML = '<div class="p-4 text-red-400">❌ Error searching</div>';
+                resultsContainer.classList.remove('hidden');
+            }
+        }
+
+        function performAdvancedSearch() {
+            const query = document.getElementById('search-input').value.trim();
+            if (query) {
+                window.location.href = `/?q=${encodeURIComponent(query)}`;
+            }
+        }
+
+        function displaySearchResults(data) {
+            const resultsContainer = document.getElementById('search-results');
+            
+            if (data.results.length === 0) {
+                resultsContainer.innerHTML = '<div class="p-4 text-white/70">🔍 Tidak ada hasil ditemukan</div>';
+                resultsContainer.classList.remove('hidden');
+                return;
+            }
+
+            let html = '';
+            
+            const users = data.results.filter(item => item.type === 'user');
+            const pastes = data.results.filter(item => item.type === 'paste');
+            
+            if (users.length > 0) {
+                html += '<div class="p-2 text-sm font-semibold text-blue-400 border-b border-white/10 flex items-center gap-2"><span>👥</span> Users</div>';
+                users.forEach(user => {
+                    const badgeHtml = user.badge_details ? user.badge_details.map(badge => 
+                        `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                    ).join('') : '';
+                    const verifiedIcon = user.is_verified ? '<span class="verification-check">✓</span>' : '';
+                    const adminIcon = user.is_admin ? '<span class="text-red-400">👑</span>' : '';
+                    
+                    html += `
+                        <div class="p-3 hover:bg-white/10 cursor-pointer border-b border-white/5 transition-all">
+                            <div class="flex items-center gap-2">
+                                <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                    ${user.username.charAt(0).toUpperCase()}
+                                </div>
+                                <span class="font-medium">${user.username}</span>
+                                ${verifiedIcon}
+                                ${adminIcon}
+                                ${badgeHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            if (pastes.length > 0) {
+                html += '<div class="p-2 text-sm font-semibold text-green-400 border-b border-white/10 flex items-center gap-2"><span>📝</span> Paste</div>';
+                pastes.forEach(paste => {
+                    const authorBadges = paste.author_badge_details ? paste.author_badge_details.map(badge => 
+                        `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                    ).join(' ') : '';
+                    const verifiedIcon = paste.author_is_verified ? '<span class="verification-check text-xs">✓</span>' : '';
+                    const adminIcon = paste.author_is_admin ? '<span class="text-red-400 text-xs">👑</span>' : '';
+                    
+                    html += `
+                        <div class="p-3 hover:bg-white/10 cursor-pointer border-b border-white/5 transition-all" onclick="window.open('/paste/${paste.id}', '_blank')">
+                            <div class="font-medium text-purple-300 mb-1">${paste.title}</div>
+                            <div class="text-sm text-white/70 flex flex-wrap items-center gap-2">
+                                <span class="flex items-center gap-1">
+                                    <div class="w-4 h-4 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                        ${paste.author_username.charAt(0).toUpperCase()}
+                                    </div>
+                                    ${paste.author_username} ${verifiedIcon} ${adminIcon} ${authorBadges}
+                                </span>
+                                <span>💻 ${paste.language}</span>
+                                <span>👁️ ${paste.views || 0}</span>
+                                ${paste.is_private ? '<span class="text-yellow-400">🔒</span>' : '<span class="text-green-400">🌍</span>'}
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            resultsContainer.innerHTML = html;
+            resultsContainer.classList.remove('hidden');
+        }
+
+        // Check authentication and load dashboard
+        async function loadDashboard() {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                showError();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/dashboard', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem('token');
+                        showError();
+                        return;
+                    }
+                    throw new Error('Failed to load dashboard');
+                }
+
+                const data = await response.json();
+                currentUser = data.user;
+                displayDashboard(data);
+                
+                loadPublicPastes();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showError();
+            }
+        }
+
+        function showError() {
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('error').classList.remove('hidden');
+        }
+
+        async function loadPublicPastes() {
+            try {
+                const response = await fetch('/api/public-pastes?limit=8');
+                if (!response.ok) {
+                    throw new Error('Failed to load public pastes');
+                }
+
+                const data = await response.json();
+                displayPublicPastes(data.pastes);
+            } catch (error) {
+                console.error('Error loading public pastes:', error);
+                document.getElementById('public-pastes-list').innerHTML = `
+                    <div class="text-center py-8 text-white/70">
+                        <p>❌ Unable to load public pastes</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayPublicPastes(pastes) {
+            const container = document.getElementById('public-pastes-list');
+            
+            if (pastes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-white/70">
+                        <div class="text-6xl mb-4">🌍</div>
+                        <p class="text-lg">Belum ada paste publik tersedia.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = pastes.map(paste => {
+                const authorBadges = paste.author_badge_details ? paste.author_badge_details.map(badge => 
+                    `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                ).join(' ') : '';
+                const verifiedIcon = paste.author_is_verified ? '<span class="verification-check text-xs">✓</span>' : '';
+                const adminIcon = paste.author_is_admin ? '<span class="text-red-400 text-xs">👑</span>' : '';
+                
+                return `
+                    <div class="feature-card rounded-xl p-6 mb-4 transition-all hover:scale-[1.02]">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-xl mb-3">
+                                    <a href="/paste/${paste.id}" class="hover:text-purple-300 transition-colors">
+                                        ${paste.title}
+                                    </a>
+                                </h3>
+                                <div class="flex flex-wrap gap-3 text-sm text-white/70 mb-2">
+                                    <span class="flex items-center gap-1">
+                                        <div class="w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-xs">
+                                            ${paste.author_username.charAt(0).toUpperCase()}
+                                        </div>
+                                        ${paste.author_username} ${verifiedIcon} ${adminIcon} ${authorBadges}
+                                    </span>
+                                    <span class="flex items-center gap-1">📅 ${new Date(paste.created_at).toLocaleDateString('id-ID')}</span>
+                                    <span class="flex items-center gap-1">💻 ${paste.language}</span>
+                                    <span class="flex items-center gap-1">👁️ ${paste.views || 0} views</span>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="/paste/${paste.id}" class="bg-blue-500/20 hover:bg-blue-500/30 px-4 py-2 rounded-lg transition-all font-medium">
+                                    👀 Lihat
+                                </a>
+                                ${currentUser && currentUser.is_admin ? `
+                                    <button onclick="adminDeletePaste('${paste.id}')" class="bg-red-500/20 hover:bg-red-500/30 px-4 py-2 rounded-lg transition-all font-medium">
+                                        🗑️ Hapus
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function displayDashboard(data) {
+            // Hide loading, show content
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('dashboard-content').classList.remove('hidden');
+
+            if (data.user.is_admin) {
+                document.getElementById('admin-panel').classList.remove('hidden');
+            }
+
+            const badgeHtml = data.user.badge_details ? data.user.badge_details.map(badge => 
+                `<span class="user-badge badge-${badge.name}">${badge.icon} ${badge.display_name}</span>`
+            ).join(' ') : '';
+            const verifiedIcon = data.user.is_verified ? '<span class="verification-check text-xl">✓</span>' : '';
+            const adminIcon = data.user.is_admin ? '<span class="text-red-400 text-xl ml-1">👑</span>' : '';
+            
+            document.getElementById('welcome-text').innerHTML = `
+                Selamat datang kembali, 
+                <span class="font-semibold text-purple-300">${data.user.username}</span> 
+                ${verifiedIcon} 
+                ${adminIcon}
+                <div class="flex flex-wrap gap-2 mt-2">
+                    ${badgeHtml}
+                </div>
+            `;
+
+            // Update stats
+            document.getElementById('total-pastes').textContent = data.pastes.length;
+            
+            const totalViews = data.pastes.reduce((sum, paste) => sum + (paste.views || 0), 0);
+            document.getElementById('total-views').textContent = totalViews;
+
+            // Update badges
+            const badgesContainer = document.getElementById('badges');
+            badgesContainer.innerHTML = '';
+            if (data.user.badge_details && data.user.badge_details.length > 0) {
+                data.user.badge_details.forEach(badge => {
+                    const badgeEl = document.createElement('div');
+                    badgeEl.className = `user-badge badge-${badge.name} ${data.user.is_verified ? 'badge-verified' : ''}`;
+                    badgeEl.innerHTML = `${badge.icon} ${badge.display_name}`;
+                    badgesContainer.appendChild(badgeEl);
+                });
+            } else {
+                const noBadge = document.createElement('div');
+                noBadge.className = 'text-white/50 text-sm';
+                noBadge.textContent = 'Belum ada badge';
+                badgesContainer.appendChild(noBadge);
+            }
+
+            const pastesContainer = document.getElementById('pastes-list');
+            if (data.pastes.length === 0) {
+                pastesContainer.innerHTML = `
+                    <div class="text-center py-12 text-white/70">
+                        <div class="text-6xl mb-4">📝</div>
+                        <p class="text-lg mb-6">Anda belum membuat paste apapun.</p>
+                        <a href="/create" class="btn-primary px-8 py-3 rounded-full font-medium shadow-lg inline-block">
+                            🚀 Buat paste pertama Anda!
+                        </a>
+                    </div>
+                `;
+            } else {
+                pastesContainer.innerHTML = data.pastes.map(paste => `
+                    <div class="feature-card rounded-xl p-6 mb-4 transition-all hover:scale-[1.02]">
+                        <div class="flex justify-between items-start">
+                            <div class="flex-1">
+                                <h3 class="font-semibold text-xl mb-3">
+                                    <a href="/paste/${paste.id}" class="hover:text-purple-300 transition-colors">
+                                        ${paste.title}
+                                    </a>
+                                </h3>
+                                <div class="flex flex-wrap gap-4 text-sm text-white/70">
+                                    <span class="flex items-center gap-1">📅 ${new Date(paste.created_at).toLocaleDateString('id-ID')}</span>
+                                    <span class="flex items-center gap-1">💻 ${paste.language}</span>
+                                    <span class="flex items-center gap-1">👁️ ${paste.views || 0} views</span>
+                                    ${paste.is_private ? '<span class="flex items-center gap-1 text-yellow-400">🔒 Private</span>' : '<span class="flex items-center gap-1 text-green-400">🌍 Public</span>'}
+                                    ${paste.password_hash ? '<span class="flex items-center gap-1 text-red-400">🔐 Password</span>' : ''}
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <a href="/paste/${paste.id}" class="bg-blue-500/20 hover:bg-blue-500/30 px-4 py-2 rounded-lg transition-all font-medium">
+                                    👀 Lihat
+                                </a>
+                                <a href="/edit/${paste.id}" class="bg-green-500/20 hover:bg-green-500/30 px-4 py-2 rounded-lg transition-all font-medium">
+                                    ✏️ Edit
+                                </a>
+                                <button onclick="deletePaste('${paste.id}')" class="bg-red-500/20 hover:bg-red-500/30 px-4 py-2 rounded-lg transition-all font-medium">
+                                    🗑️ Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+
+        async function showAllUsers() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                const html = `
+                    <h3 class="text-lg font-semibold mb-4 text-red-300">👥 Kelola Users</h3>
+                    <div class="space-y-2 max-h-64 overflow-y-auto">
+                        ${data.users.map(user => {
+                            const badgeHtml = user.badge_details ? user.badge_details.map(badge => 
+                                `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                            ).join('') : '';
+                            
+                            return `
+                                <div class="flex items-center justify-between feature-card p-3 rounded-lg">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                                            ${user.username.charAt(0).toUpperCase()}
+                                        </div>
+                                        <span class="font-medium">${user.username}</span>
+                                        ${user.is_verified ? '<span class="verification-check">✓</span>' : ''}
+                                        ${user.is_admin ? '<span class="text-red-400">👑</span>' : ''}
+                                        ${badgeHtml}
+                                    </div>
+                                    <div class="flex gap-2">
+                                        ${!user.is_verified ? `
+                                            <button onclick="verifyUser('${user.username}')" 
+                                                    class="text-xs px-3 py-1 rounded-full bg-green-500/20 hover:bg-green-500/30 transition-all">
+                                                ✅ Verify
+                                            </button>
+                                        ` : ''}
+                                        ${!user.is_admin ? `
+                                            <button onclick="promoteUser('${user.username}')" 
+                                                    class="text-xs px-3 py-1 rounded-full bg-purple-500/20 hover:bg-purple-500/30 transition-all">
+                                                👑 Promote
+                                            </button>
+                                        ` : ''}
+                                        ${user.username !== currentUser.username ? `
+                                            <button onclick="deleteUser('${user.username}')" 
+                                                    class="text-xs px-3 py-1 rounded-full bg-red-500/20 hover:bg-red-500/30 transition-all">
+                                                🗑️ Hapus
+                                            </button>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                document.getElementById('admin-content').innerHTML = html;
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        // ... existing code for admin functions ...
+
+        async function verifyUser(username) {
+            const token = localStorage.getItem('token');
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                
+                const response = await fetch('/api/admin/verify-user', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('✅ User berhasil diverifikasi!');
+                    showAllUsers();
+                } else {
+                    const error = await response.json();
+                    alert('❌ ' + (error.detail || 'Gagal memverifikasi user'));
+                }
+            } catch (error) {
+                console.error('Error verifying user:', error);
+            }
+        }
+
+        async function promoteUser(username) {
+            if (!confirm(`👑 Yakin ingin mempromosikan ${username} menjadi admin?`)) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const formData = new FormData();
+                formData.append('username', username);
+                
+                const response = await fetch('/api/admin/promote-user', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (response.ok) {
+                    alert('👑 User berhasil dipromosikan menjadi admin!');
+                    showAllUsers();
+                } else {
+                    const error = await response.json();
+                    alert('❌ ' + (error.detail || 'Gagal mempromosikan user'));
+                }
+            } catch (error) {
+                console.error('Error promoting user:', error);
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`🗑️ Yakin ingin menghapus user ${username}? Semua paste mereka akan ikut terhapus!`)) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`/api/admin/user/${username}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                if (response.ok) {
+                    alert('✅ User berhasil dihapus!');
+                    showAllUsers();
+                } else {
+                    const error = await response.json();
+                    alert('❌ ' + (error.detail || 'Gagal menghapus user'));
+                }
+            } catch (error) {
+                console.error('Error deleting user:', error);
+            }
+        }
+
+        async function adminDeletePaste(pasteId) {
+            if (!confirm('🗑️ Yakin ingin menghapus paste ini?')) return;
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(`/api/admin/paste/${pasteId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    alert('✅ Paste berhasil dihapus!');
+                    loadPublicPastes();
+                } else {
+                    const error = await response.json();
+                    alert('❌ ' + (error.detail || 'Gagal menghapus paste'));
+                }
+            } catch (error) {
+                console.error('Error deleting paste:', error);
+            }
+        }
+
+        function showProfileEdit() {
+            if (currentUser) {
+                document.getElementById('profile-username').value = currentUser.username;
+                document.getElementById('profile-name').value = currentUser.name || '';
+                document.getElementById('profile-password').value = '';
+                document.getElementById('profile-modal').classList.remove('hidden');
+            }
+        }
+
+        function hideProfileEdit() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            const name = document.getElementById('profile-name').value;
+            const username = document.getElementById('profile-username').value;
+            const password = document.getElementById('profile-password').value;
+            
+            if (name) formData.append('name', name);
+            if (username) formData.append('username', username);
+            if (password) formData.append('password', password);
+            
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch('/api/profile/update', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                if (response.ok) {
+                    if (data.new_token) {
+                        localStorage.setItem('token', data.new_token);
+                    }
+                    alert('✅ Profil berhasil diperbarui!');
+                    hideProfileEdit();
+                    loadDashboard();
+                } else {
+                    alert('❌ ' + (data.detail || 'Gagal memperbarui profil'));
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                alert('❌ Terjadi kesalahan saat memperbarui profil');
+            }
+        });
+
+        // Load dashboard on page load
+        loadDashboard();
+
+        async function deletePaste(pasteId) {
+            if (!confirm('🗑️ Yakin ingin menghapus paste ini? Tindakan ini tidak dapat dibatalkan.')) {
+                return;
+            }
+
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('❌ Silakan masuk untuk menghapus paste.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/paste/${pasteId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    alert('✅ Paste berhasil dihapus!');
+                    loadDashboard();
+                } else {
+                    const error = await response.json();
+                    alert('❌ ' + (error.detail || 'Gagal menghapus paste'));
+                }
+            } catch (error) {
+                console.error('Error deleting paste:', error);
+                alert('❌ Terjadi kesalahan saat menghapus paste');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+        }
+
+        function showAllPastes() {
+            document.getElementById('admin-content').innerHTML = `
+                <h3 class="text-lg font-semibold mb-4 text-red-300">📝 Kelola Paste</h3>
+                <p class="text-white/70">Fitur ini akan segera tersedia untuk moderasi konten.</p>
+            `;
+        }
+
+        function showBadgeManagement() {
+            document.getElementById('admin-content').innerHTML = `
+                <h3 class="text-lg font-semibold mb-4 text-red-300">🏆 Kelola Badge</h3>
+                <p class="text-white/70">Sistem reward badge akan segera tersedia.</p>
+            `;
+        }
+
+        function showSystemStats() {
+            document.getElementById('admin-content').innerHTML = `
+                <h3 class="text-lg font-semibold mb-4 text-red-300">📊 Statistik Platform</h3>
+                <p class="text-white/70">Analytics dan statistik platform akan segera tersedia.</p>
+            `;
+        }
+    </script>
+</body>
+</html>
