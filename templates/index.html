@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeShare - Platform Cepat untuk Berbagi Kode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+        }
+        
+        .hero-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .feature-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 0 25px 50px -12px rgba(102, 126, 234, 0.25);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-primary:hover::before {
+            left: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        }
+        
+        .floating-shapes {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 60%;
+            right: 10%;
+            animation-delay: 2s;
+        }
+        
+        .shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            bottom: 20%;
+            left: 20%;
+            animation-delay: 4s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        
+        .code-preview {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .code-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: rgba(102, 126, 234, 0.1);
+            border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+        }
+        
+        .typing-animation {
+            overflow: hidden;
+            border-right: 2px solid #667eea;
+            white-space: nowrap;
+            animation: typing 3s steps(40, end), blink-caret 0.75s step-end infinite;
+        }
+        
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        @keyframes blink-caret {
+            from, to { border-color: transparent; }
+            50% { border-color: #667eea; }
+        }
+
+        /* Added badge and verification styles */
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        
+        .badge-newcomer { background: rgba(107, 114, 128, 0.2); color: rgb(156, 163, 175); border-color: rgba(107, 114, 128, 0.3); }
+        .badge-member { background: rgba(34, 197, 94, 0.2); color: rgb(74, 222, 128); border-color: rgba(34, 197, 94, 0.3); }
+        .badge-verified { background: rgba(59, 130, 246, 0.2); color: rgb(96, 165, 250); border-color: rgba(59, 130, 246, 0.3); }
+        .badge-pro { background: rgba(147, 51, 234, 0.2); color: rgb(196, 181, 253); border-color: rgba(147, 51, 234, 0.3); }
+        .badge-expert { background: rgba(249, 115, 22, 0.2); color: rgb(251, 146, 60); border-color: rgba(249, 115, 22, 0.3); }
+        .badge-legend { background: rgba(239, 68, 68, 0.2); color: rgb(248, 113, 113); border-color: rgba(239, 68, 68, 0.3); }
+        .badge-popular { background: rgba(236, 72, 153, 0.2); color: rgb(244, 114, 182); border-color: rgba(236, 72, 153, 0.3); }
+        .badge-prolific { background: rgba(99, 102, 241, 0.2); color: rgb(129, 140, 248); border-color: rgba(99, 102, 241, 0.3); }
+        .badge-admin { background: rgba(220, 38, 38, 0.2); color: rgb(248, 113, 113); border-color: rgba(220, 38, 38, 0.3); }
+        
+        .verification-check {
+            color: #3b82f6;
+            font-size: 0.875rem;
+            margin-left: 0.25rem;
+        }
+
+        /* Added responsive improvements */
+        @media (max-width: 640px) {
+            .hero-gradient {
+                font-size: 2.5rem;
+                line-height: 1.1;
+            }
+            .feature-card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen">
+    <div class="floating-shapes">
+        <div class="shape"></div>
+        <div class="shape"></div>
+        <div class="shape"></div>
+    </div>
+
+    <nav class="bg-black/20 backdrop-blur-md border-b border-white/10 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row justify-between h-auto sm:h-16 py-2 sm:py-0">
+                <div class="flex items-center justify-center sm:justify-start">
+                    <a href="/" class="text-2xl font-bold hero-gradient">CodeShare</a>
+                </div>
+                <div class="flex items-center justify-center space-x-2 sm:space-x-4 mt-2 sm:mt-0">
+                    <!-- Enhanced search functionality with better mobile responsiveness -->
+                    <div class="flex items-center w-full sm:w-auto max-w-md order-1 sm:order-none">
+                        <div class="relative flex-1 sm:flex-none w-full">
+                            <input 
+                                type="text" 
+                                id="search-input" 
+                                placeholder="Cari username, kode, bahasa..." 
+                                class="bg-white/10 border border-white/20 rounded-full px-4 py-2 pr-12 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent w-full sm:w-64 md:w-80 transition-all duration-300 focus:w-full focus:bg-white/15"
+                            >
+                            <button onclick="performSearch()" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-500/20 hover:bg-purple-500/40 p-1.5 rounded-full text-sm transition-all duration-200 hover:scale-110">
+                                🔍
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Improved button layout for mobile -->
+                    <div class="flex items-center space-x-2 order-2 sm:order-none">
+                        <!-- Removed Users link from navigation -->
+                        <a href="/create" class="btn-primary px-3 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium relative whitespace-nowrap">
+                            <span class="hidden sm:inline">Create Paste</span>
+                            <span class="sm:hidden">Create</span>
+                        </a>
+                        <!-- Fixed auth button display logic -->
+                        <div id="auth-buttons" class="flex items-center space-x-1 sm:space-x-2">
+                            <a href="/login" class="text-gray-300 hover:text-white px-2 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors">
+                                Login
+                            </a>
+                            <a href="/signup" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-3 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-medium transition-all transform hover:scale-105 shadow-lg">
+                                <span class="hidden sm:inline">Sign Up</span>
+                                <span class="sm:hidden">Join</span>
+                            </a>
+                        </div>
+                        <div id="user-menu" class="hidden flex items-center space-x-1 sm:space-x-2">
+                            <span id="user-info" class="text-gray-300 text-xs sm:text-sm flex items-center"></span>
+                            <!-- Added Feed link for logged in users -->
+                            <a href="/feed" class="text-gray-300 hover:text-white px-2 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors">
+                                Feed
+                            </a>
+                            <a href="/dashboard" class="text-gray-300 hover:text-white px-2 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors">
+                                Dashboard
+                            </a>
+                            <button onclick="logout()" class="text-gray-300 hover:text-white px-2 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-colors">
+                                Logout
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Added mobile search toggle for better UX -->
+            <div class="sm:hidden mt-2 pb-2">
+                <button onclick="toggleMobileSearch()" id="mobile-search-toggle" class="w-full bg-white/5 hover:bg-white/10 border border-white/20 rounded-full px-4 py-2 text-sm text-gray-400 text-left transition-all">
+                    🔍 Cari paste, username, atau kode...
+                </button>
+                <div id="mobile-search-expanded" class="hidden mt-2">
+                    <div class="relative">
+                        <input 
+                            type="text" 
+                            id="mobile-search-input" 
+                            placeholder="Ketik untuk mencari..." 
+                            class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-3 pr-12 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        >
+                        <button onclick="performMobileSearch()" class="absolute right-3 top-1/2 transform -translate-y-1/2 bg-purple-500 hover:bg-purple-600 p-2 rounded-lg text-sm transition-all">
+                            🔍
+                        </button>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="quickSearch('python')" class="bg-blue-500/20 hover:bg-blue-500/30 px-3 py-1 rounded-full text-xs transition-all">Python</button>
+                        <button onclick="quickSearch('javascript')" class="bg-yellow-500/20 hover:bg-yellow-500/30 px-3 py-1 rounded-full text-xs transition-all">JS</button>
+                        <button onclick="quickSearch('html')" class="bg-orange-500/20 hover:bg-orange-500/30 px-3 py-1 rounded-full text-xs transition-all">HTML</button>
+                        <button onclick="quickSearch('css')" class="bg-pink-500/20 hover:bg-pink-500/30 px-3 py-1 rounded-full text-xs transition-all">CSS</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Hero Section -->
+        <div class="hero-section px-4 py-12 sm:py-20 text-center">
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-bold mb-6 sm:mb-8 hero-gradient leading-tight">
+                Platform Cepat untuk<br class="hidden sm:block">Berbagi Kode
+            </h1>
+            <p class="text-lg sm:text-xl md:text-2xl text-gray-300 mb-8 sm:mb-12 max-w-3xl mx-auto leading-relaxed px-4">
+                Buka, tulis, bagikan. Selesai.<br>
+                <span class="text-purple-400">Platform modern</span> untuk berbagi paste, kode, dan diskusi dengan fitur lengkap.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row justify-center items-center space-y-4 sm:space-y-0 sm:space-x-6 mb-12 sm:mb-16 px-4">
+                <a href="/create" class="btn-primary px-8 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium relative w-full sm:w-auto text-center">
+                    🚀 Mulai Berbagi Sekarang
+                </a>
+                <a href="#features" class="border border-purple-500/50 hover:border-purple-400 px-8 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-medium hover:bg-purple-500/10 transition-all transform hover:scale-105 w-full sm:w-auto text-center">
+                    ✨ Lihat Fitur
+                </a>
+            </div>
+
+            <!-- Code Preview Demo -->
+            <div class="max-w-2xl mx-auto mb-12 sm:mb-20 px-4">
+                <div class="code-preview">
+                    <div class="pt-8">
+                        <div class="text-green-400 mb-2 text-sm sm:text-base"># Python Example</div>
+                        <div class="typing-animation text-blue-300 text-sm sm:text-base">
+                            def hello_codeshare():
+                        </div>
+                        <div class="text-yellow-300 ml-4 mt-1 text-sm sm:text-base">
+                            print("Welcome to CodeShare! 🎉")
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div id="features" class="px-4 py-12 sm:py-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-4 hero-gradient">Fitur Unggulan</h2>
+            <p class="text-center text-gray-400 mb-12 sm:mb-16 text-base sm:text-lg px-4">Semua yang Anda butuhkan untuk berbagi kode dengan mudah</p>
+            
+            <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">📝</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Rich Text Editor</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Editor lengkap dengan bold, list, code block, syntax highlighting, dan formatting lainnya.</p>
+                </div>
+                
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">📁</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Upload File</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Upload file kode langsung dengan drag & drop, auto-detect bahasa pemrograman.</p>
+                </div>
+                
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">🔒</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Paste & Code Friendly</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Link publik/pribadi dengan proteksi password untuk keamanan maksimal.</p>
+                </div>
+                
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">💬</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Thread Diskusi</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Sistem thread untuk diskusi dan tanya jawab pada setiap paste.</p>
+                </div>
+                
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">⚡</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Test Run Code</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Jalankan kode Python, JavaScript, dan Bash langsung di browser.</p>
+                </div>
+                
+                <div class="feature-card p-6 sm:p-8 rounded-2xl">
+                    <div class="text-3xl sm:text-4xl mb-4 sm:mb-6">🚀</div>
+                    <h3 class="text-lg sm:text-xl font-semibold mb-3 sm:mb-4 text-purple-300">Cepat & Mudah</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm sm:text-base">Proses yang simpel: buka, tulis, bagikan. Selesai dalam hitungan detik!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Public Pastes Section -->
+        <div class="recent-pastes px-4 py-12 sm:py-16">
+            <h2 class="text-3xl sm:text-4xl font-bold text-center mb-4 hero-gradient">Paste Terbaru dari Komunitas</h2>
+            <p class="text-center text-gray-400 mb-8 sm:mb-12 text-base sm:text-lg px-4">Lihat apa yang sedang dibagikan oleh developer lain</p>
+            
+            <div class="max-w-6xl mx-auto">
+                <div id="public-pastes-container">
+                    <div class="text-center py-8">
+                        <div class="loading mx-auto mb-4"></div>
+                        <p class="text-gray-400">Memuat paste terbaru...</p>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-8">
+                    <a href="/create" class="btn-primary px-6 sm:px-8 py-2 sm:py-3 rounded-full text-base sm:text-lg font-medium relative inline-block">
+                        Bagikan Kode Anda Juga!
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA Section -->
+        <div class="cta-section px-4 py-12 sm:py-20 text-center">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6 hero-gradient">Siap Mulai Berbagi?</h2>
+                <p class="text-lg sm:text-xl text-gray-300 mb-6 sm:mb-8 px-4">Bergabunglah dengan ribuan developer yang sudah menggunakan CodeShare</p>
+                <a href="/create" class="btn-primary px-8 sm:px-12 py-3 sm:py-4 rounded-full text-lg sm:text-xl font-medium relative inline-block">
+                    🎯 Buat Paste Pertama Anda
+                </a>
+            </div>
+        </div>
+
+        <!-- Enhanced Search Filters Section -->
+        <div id="search-filters" class="hidden px-4 py-6 bg-black/20 backdrop-blur-md border-b border-white/10">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row flex-wrap gap-4 items-start sm:items-center">
+                    <span class="text-gray-300 font-medium">Filter:</span>
+                    <div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+                        <select id="language-filter" class="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-auto">
+                            <option value="">Semua Bahasa</option>
+                            <option value="python">Python</option>
+                            <option value="javascript">JavaScript</option>
+                            <option value="java">Java</option>
+                            <option value="cpp">C++</option>
+                            <option value="html">HTML</option>
+                            <option value="css">CSS</option>
+                            <option value="php">PHP</option>
+                            <option value="sql">SQL</option>
+                            <option value="bash">Bash</option>
+                            <option value="text">Text</option>
+                        </select>
+                        <select id="sort-filter" class="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-full sm:w-auto">
+                            <option value="newest">Terbaru</option>
+                            <option value="oldest">Terlama</option>
+                            <option value="most_viewed">Paling Dilihat</option>
+                            <option value="title">Judul A-Z</option>
+                        </select>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="applyFilters()" class="bg-purple-500 hover:bg-purple-600 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 sm:flex-none">
+                            Terapkan Filter
+                        </button>
+                        <button onclick="clearFilters()" class="bg-gray-600 hover:bg-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all flex-1 sm:flex-none">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced Search Results Section -->
+        <div id="search-results" class="hidden px-4 py-12">
+            <div class="max-w-7xl mx-auto">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 space-y-4 sm:space-y-0">
+                    <h2 class="text-2xl sm:text-3xl font-bold hero-gradient">Hasil Pencarian</h2>
+                    <button onclick="toggleSearchFilters()" class="bg-purple-500/20 hover:bg-purple-500/30 px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto">
+                        🔧 Filter Lanjutan
+                    </button>
+                </div>
+                <div id="search-results-container">
+                    <!-- Search results will be populated here -->
+                </div>
+                <div id="search-pagination" class="flex flex-wrap justify-center mt-8 gap-2">
+                    <!-- Pagination will be populated here -->
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentSearchQuery = '';
+        let currentPage = 1;
+        let currentFilters = {
+            language: '',
+            sort: 'newest'
+        };
+
+        function toggleMobileSearch() {
+            const expanded = document.getElementById('mobile-search-expanded');
+            const toggle = document.getElementById('mobile-search-toggle');
+            
+            if (expanded.classList.contains('hidden')) {
+                expanded.classList.remove('hidden');
+                toggle.classList.add('hidden');
+                document.getElementById('mobile-search-input').focus();
+            } else {
+                expanded.classList.add('hidden');
+                toggle.classList.remove('hidden');
+            }
+        }
+
+        function performMobileSearch() {
+            const query = document.getElementById('mobile-search-input').value.trim();
+            if (query) {
+                document.getElementById('search-input').value = query;
+                performSearch();
+                // Hide mobile search after searching
+                document.getElementById('mobile-search-expanded').classList.add('hidden');
+                document.getElementById('mobile-search-toggle').classList.remove('hidden');
+            }
+        }
+
+        function quickSearch(language) {
+            document.getElementById('mobile-search-input').value = language;
+            document.getElementById('search-input').value = language;
+            performSearch();
+            // Hide mobile search after searching
+            document.getElementById('mobile-search-expanded').classList.add('hidden');
+            document.getElementById('mobile-search-toggle').classList.remove('hidden');
+        }
+
+        async function performSearch(page = 1) {
+            const query = document.getElementById('search-input').value.trim();
+            if (!query && !currentSearchQuery) return;
+            
+            if (query) currentSearchQuery = query;
+            currentPage = page;
+            
+            // Show search results section and hide others
+            document.getElementById('search-results').classList.remove('hidden');
+            document.querySelector('.hero-section')?.classList.add('hidden');
+            document.querySelector('#features')?.classList.add('hidden');
+            document.querySelector('.recent-pastes')?.classList.add('hidden');
+            document.querySelector('.cta-section')?.classList.add('hidden');
+            
+            try {
+                const params = new URLSearchParams({
+                    q: currentSearchQuery,
+                    page: currentPage,
+                    limit: 12,
+                    ...currentFilters
+                });
+                
+                const response = await fetch(`/api/search?${params}`);
+                if (!response.ok) throw new Error('Search failed');
+                
+                const data = await response.json();
+                displaySearchResults(data);
+                
+                // Update URL without page reload
+                const url = new URL(window.location);
+                url.searchParams.set('q', currentSearchQuery);
+                url.searchParams.set('page', currentPage);
+                window.history.pushState({}, '', url);
+                
+            } catch (error) {
+                console.error('Search error:', error);
+                document.getElementById('search-results-container').innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <div class="text-6xl mb-4">❌</div>
+                        <p class="text-lg">Pencarian gagal. Silakan coba lagi.</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displaySearchResults(data) {
+            const container = document.getElementById('search-results-container');
+            const { results, total, page, pages } = data;
+            
+            if (results.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <div class="text-6xl mb-4">🔍</div>
+                        <p class="text-lg mb-2">Tidak ada hasil untuk "${currentSearchQuery}"</p>
+                        <p class="text-base">Coba kata kunci yang berbeda atau periksa ejaan.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Display results count
+            container.innerHTML = `
+                <div class="mb-6 text-gray-300">
+                    Ditemukan <span class="text-purple-400 font-semibold">${total}</span> hasil untuk "<span class="text-blue-400">${currentSearchQuery}</span>"
+                </div>
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${results.map(item => {
+                        if (item.type === 'user') {
+                            return createUserCard(item);
+                        } else {
+                            return createPasteCard(item);
+                        }
+                    }).join('')}
+                </div>
+            `;
+            
+            // Update pagination
+            updatePagination(page, pages);
+        }
+
+        function createUserCard(user) {
+            let badgesHtml = '';
+            if (user.badge_details && user.badge_details.length > 0) {
+                badgesHtml = user.badge_details.map(badge => 
+                    `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                ).join(' ');
+            }
+            
+            const verificationIcon = user.is_verified ? '<span class="verification-check text-sm">✓</span>' : '';
+            const adminIcon = user.is_admin ? '<span class="text-red-400 ml-1">👑</span>' : '';
+            
+            return `
+                <div class="feature-card p-6 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                ${user.username.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="font-semibold text-white flex items-center gap-1">
+                                    ${user.username} ${verificationIcon} ${adminIcon}
+                                </h3>
+                                <div class="flex flex-wrap gap-1 mt-1">
+                                    ${badgesHtml}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-sm text-gray-400 space-y-1">
+                        <p>📝 ${user.paste_count || 0} paste</p>
+                        <p>📅 Bergabung ${new Date(user.created_at).toLocaleDateString('id-ID')}</p>
+                    </div>
+                    <div class="mt-4 text-right">
+                        <a href="/user/${user.username}" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 px-4 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105">
+                            Lihat Profile
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function createPasteCard(paste) {
+            let authorBadges = '';
+            if (paste.author_badge_details && paste.author_badge_details.length > 0) {
+                authorBadges = paste.author_badge_details.map(badge => 
+                    `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                ).join(' ');
+            }
+            
+            const verificationIcon = paste.author_is_verified ? '<span class="verification-check text-xs">✓</span>' : '';
+            
+            return `
+                <div class="feature-card p-6 rounded-2xl">
+                    <div class="mb-4">
+                        <h3 class="text-lg font-semibold mb-3 text-purple-300">
+                            <a href="/paste/${paste.id}" class="hover:text-purple-200 transition-colors">
+                                ${paste.title}
+                            </a>
+                        </h3>
+                        <div class="flex flex-wrap gap-2 text-sm text-gray-400 mb-3">
+                            <span class="bg-purple-500/20 px-3 py-1 rounded-full flex items-center gap-1">
+                                👤 ${paste.author_username} ${verificationIcon} ${authorBadges}
+                            </span>
+                            <span class="bg-blue-500/20 px-3 py-1 rounded-full">💻 ${paste.language}</span>
+                        </div>
+                        <div class="text-sm text-gray-400 mb-4 flex flex-wrap gap-4">
+                            <span class="flex items-center gap-1">📅 ${new Date(paste.created_at).toLocaleDateString('id-ID')}</span>
+                            <span class="flex items-center gap-1">👁️ ${paste.views || 0} views</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <a href="/paste/${paste.id}" class="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 px-4 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105">
+                            Lihat Kode
+                        </a>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updatePagination(currentPage, totalPages) {
+            const container = document.getElementById('search-pagination');
+            if (totalPages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+            
+            let paginationHtml = '';
+            
+            // Previous button
+            if (currentPage > 1) {
+                paginationHtml += `
+                    <button onclick="performSearch(${currentPage - 1})" class="bg-purple-500/20 hover:bg-purple-500/40 px-3 py-2 rounded-lg text-sm transition-all">
+                        ← Sebelumnya
+                    </button>
+                `;
+            }
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage;
+                paginationHtml += `
+                    <button onclick="performSearch(${i})" class="${isActive ? 'bg-purple-500 text-white' : 'bg-purple-500/20 hover:bg-purple-500/40'} px-3 py-2 rounded-lg text-sm transition-all">
+                        ${i}
+                    </button>
+                `;
+            }
+            
+            // Next button
+            if (currentPage < totalPages) {
+                paginationHtml += `
+                    <button onclick="performSearch(${currentPage + 1})" class="bg-purple-500/20 hover:bg-purple-500/40 px-3 py-2 rounded-lg text-sm transition-all">
+                        Selanjutnya →
+                    </button>
+                `;
+            }
+            
+            container.innerHTML = paginationHtml;
+        }
+
+        function toggleSearchFilters() {
+            const filters = document.getElementById('search-filters');
+            filters.classList.toggle('hidden');
+        }
+
+        function applyFilters() {
+            currentFilters.language = document.getElementById('language-filter').value;
+            currentFilters.sort = document.getElementById('sort-filter').value;
+            performSearch(1); // Reset to first page when applying filters
+        }
+
+        function clearFilters() {
+            document.getElementById('language-filter').value = '';
+            document.getElementById('sort-filter').value = 'newest';
+            currentFilters = { language: '', sort: 'newest' };
+            performSearch(1);
+        }
+
+        function showHomePage() {
+            document.getElementById('search-results').classList.add('hidden');
+            document.getElementById('search-filters').classList.add('hidden');
+            document.querySelector('.hero-section')?.classList.remove('hidden');
+            document.querySelector('#features')?.classList.remove('hidden');
+            document.querySelector('.recent-pastes')?.classList.remove('hidden');
+            document.querySelector('.cta-section')?.classList.remove('hidden');
+            
+            // Clear URL parameters
+            const url = new URL(window.location);
+            url.searchParams.delete('q');
+            url.searchParams.delete('page');
+            window.history.pushState({}, '', url);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            const mobileSearchInput = document.getElementById('mobile-search-input');
+            
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+            
+            if (mobileSearchInput) {
+                mobileSearchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performMobileSearch();
+                    }
+                });
+            }
+            
+            // Check for search query in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('q');
+            const page = parseInt(urlParams.get('page')) || 1;
+            
+            if (searchQuery) {
+                document.getElementById('search-input').value = searchQuery;
+                currentSearchQuery = searchQuery;
+                performSearch(page);
+            } else {
+                checkUserAuth();
+                loadPublicPastes();
+            }
+        });
+
+        async function checkUserAuth() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const response = await fetch('/api/dashboard', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        document.getElementById('auth-buttons').classList.add('hidden');
+                        document.getElementById('user-menu').classList.remove('hidden');
+                        
+                        const userInfo = document.getElementById('user-info');
+                        let badgesHtml = '';
+                        
+                        if (data.user.badge_details && data.user.badge_details.length > 0) {
+                            badgesHtml = data.user.badge_details.map(badge => {
+                                const verificationCheck = data.user.is_verified ? '<span class="verification-check">✓</span>' : '';
+                                return `<span class="user-badge badge-${badge.name}">${badge.icon} ${badge.display_name}</span>`;
+                            }).join(' ');
+                        }
+                        
+                        const verificationIcon = data.user.is_verified ? '<span class="verification-check">✓</span>' : '';
+                        const adminIcon = data.user.is_admin ? '<span class="text-red-400 ml-1">👑</span>' : '';
+                        
+                        userInfo.innerHTML = `
+                            <span class="mr-2 font-medium">${data.user.username}${verificationIcon}${adminIcon}</span>
+                            ${badgesHtml}
+                        `;
+                    } else {
+                        localStorage.removeItem('token');
+                        showAuthButtons();
+                    }
+                } catch (error) {
+                    console.error('Auth check failed:', error);
+                    localStorage.removeItem('token');
+                    showAuthButtons();
+                }
+            } else {
+                showAuthButtons();
+            }
+        }
+
+        function showAuthButtons() {
+            document.getElementById('auth-buttons').classList.remove('hidden');
+            document.getElementById('user-menu').classList.add('hidden');
+        }
+
+        async function loadPublicPastes() {
+            try {
+                const response = await fetch('/api/public-pastes?limit=6');
+                if (!response.ok) {
+                    throw new Error('Failed to load public pastes');
+                }
+
+                const data = await response.json();
+                displayPublicPastes(data.pastes);
+            } catch (error) {
+                console.error('Error loading public pastes:', error);
+                document.getElementById('public-pastes-container').innerHTML = `
+                    <div class="text-center py-8 text-gray-400">
+                        <p>Tidak dapat memuat paste terbaru</p>
+                    </div>
+                `;
+            }
+        }
+
+        function displayPublicPastes(pastes) {
+            const container = document.getElementById('public-pastes-container');
+            
+            if (pastes.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <div class="text-6xl mb-4">📝</div>
+                        <p class="text-lg mb-2">Belum ada paste publik yang tersedia.</p>
+                        <p class="text-base">Jadilah yang pertama membagikan kode!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${pastes.map(paste => {
+                        let authorBadges = '';
+                        let verificationIcon = '';
+                        
+                        if (paste.author_badge_details && paste.author_badge_details.length > 0) {
+                            authorBadges = paste.author_badge_details.map(badge => 
+                                `<span class="user-badge badge-${badge.name} text-xs">${badge.icon}</span>`
+                            ).join(' ');
+                        }
+                        
+                        if (paste.author_is_verified) {
+                            verificationIcon = '<span class="verification-check text-xs">✓</span>';
+                        }
+                        
+                        return `
+                            <div class="feature-card p-6 rounded-2xl hover:transform hover:scale-105 transition-all">
+                                <div class="mb-4">
+                                    <h3 class="text-lg font-semibold mb-3 text-purple-300">
+                                        <a href="/paste/${paste.id}" class="hover:text-purple-200 transition-colors">
+                                            ${paste.title}
+                                        </a>
+                                    </h3>
+                                    <div class="flex flex-wrap gap-2 text-sm text-gray-400 mb-3">
+                                        <span class="bg-purple-500/20 px-3 py-1 rounded-full flex items-center gap-1">
+                                            👤 ${paste.author_username} ${verificationIcon} ${authorBadges}
+                                        </span>
+                                        <span class="bg-blue-500/20 px-3 py-1 rounded-full">💻 ${paste.language}</span>
+                                    </div>
+                                    <div class="text-sm text-gray-400 mb-4 flex flex-wrap gap-4">
+                                        <span class="flex items-center gap-1">📅 ${new Date(paste.created_at).toLocaleDateString('id-ID')}</span>
+                                        <span class="flex items-center gap-1">👁️ ${paste.views || 0} views</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <a href="/paste/${paste.id}" class="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 px-4 py-2 rounded-full text-sm font-medium transition-all transform hover:scale-105 shadow-lg">
+                                        Lihat Kode
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            showAuthButtons();
+            window.location.href = '/';
+        }
+
+        // Allow Enter key to trigger search
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+            
+            checkUserAuth();
+            loadPublicPastes();
+        });
+
+        // Add authorization header to all requests
+        const originalFetch = window.fetch;
+        window.fetch = function(...args) {
+            const token = localStorage.getItem('token');
+            if (token && args[1]) {
+                args[1].headers = {
+                    ...args[1].headers,
+                    'Authorization': `Bearer ${token}`
+                };
+            }
+            return originalFetch.apply(this, args);
+        };
+
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        function restartTypingAnimation() {
+            const typingElement = document.querySelector('.typing-animation');
+            if (typingElement) {
+                // Remove animation
+                typingElement.style.animation = 'none';
+                typingElement.style.width = '0';
+                
+                // Force reflow
+                typingElement.offsetHeight;
+                
+                // Restart animation after a short delay
+                setTimeout(() => {
+                    typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
+                }, 100);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Start typing animation loop
+            setInterval(restartTypingAnimation, 6000);
+            
+            // Initial animation start
+            setTimeout(restartTypingAnimation, 1000);
+        });
+
+        // Restart typing animation every 5 seconds
+        setInterval(() => {
+            const typingElement = document.querySelector('.typing-animation');
+            if (typingElement) {
+                typingElement.style.animation = 'none';
+                setTimeout(() => {
+                    typingElement.style.animation = 'typing 3s steps(40, end), blink-caret 0.75s step-end infinite';
+                }, 100);
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
