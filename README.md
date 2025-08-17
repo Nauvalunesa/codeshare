@@ -14,7 +14,6 @@ Platform cepat untuk berbagi paste, kode, dan thread diskusi
 ## Teknologi
 
 - **Backend**: FastAPI (Python)
-- **Database**: Apache Cassandra
 - **Frontend**: HTML, CSS (Tailwind), JavaScript
 - **Authentication**: JWT tokens
 - **Syntax Highlighting**: Prism.js
@@ -26,16 +25,7 @@ Platform cepat untuk berbagi paste, kode, dan thread diskusi
 pip install -r requirements.txt
 \`\`\`
 
-2. **Setup Cassandra**:
-   - Install Apache Cassandra
-   - Start Cassandra service
-   - Database akan dibuat otomatis saat aplikasi pertama kali dijalankan
 
-3. **Setup environment**:
-\`\`\`bash
-cp .env.example .env
-# Edit .env dengan konfigurasi yang sesuai
-\`\`\`
 
 4. **Jalankan aplikasi**:
 \`\`\`bash
