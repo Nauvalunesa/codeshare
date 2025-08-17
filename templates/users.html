@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All Users - CodeShare</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#6366f1',
+                        secondary: '#8b5cf6',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-gray-800/50 backdrop-blur-sm border-b border-gray-700 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Made navigation more responsive -->
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="/" class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+                        CodeShare
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <a href="/users" class="text-gray-300 hover:text-white px-2 sm:px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <span class="hidden sm:inline">Users</span>
+                        <span class="sm:hidden">👥</span>
+                    </a>
+                    {% if current_user %}
+                        <a href="/feed" class="text-gray-300 hover:text-white px-2 sm:px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <span class="hidden sm:inline">Feed</span>
+                            <span class="sm:hidden">📰</span>
+                        </a>
+                        <a href="/dashboard" class="text-gray-300 hover:text-white px-2 sm:px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <span class="hidden sm:inline">Dashboard</span>
+                            <span class="sm:hidden">📊</span>
+                        </a>
+                        <a href="/logout" class="bg-red-600 hover:bg-red-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <span class="hidden sm:inline">Logout</span>
+                            <span class="sm:hidden">🚪</span>
+                        </a>
+                    {% else %}
+                        <a href="/login" class="bg-primary hover:bg-blue-700 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Login
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold mb-2">All Users</h1>
+            <p class="text-gray-400">Discover developers in the CodeShare community</p>
+        </div>
+
+        <!-- Search -->
+        <div class="mb-6">
+            <div class="relative">
+                <input type="text" id="userSearch" placeholder="Search users..." 
+                       class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Users Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="usersGrid">
+            {% for user in users %}
+                <div class="user-card bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-all">
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-lg font-bold">
+                            {{ user.username[0].upper() }}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-1">
+                                <h3 class="font-semibold text-lg">
+                                    <a href="/user/{{ user.username }}" class="text-white hover:text-blue-400 transition-colors">
+                                        {{ user.username }}
+                                    </a>
+                                </h3>
+                                {% if user.verified_by_admin %}
+                                    <span class="text-blue-400" title="Verified">✓</span>
+                                {% endif %}
+                            </div>
+                            <p class="text-gray-400 text-sm">{{ user.paste_count }} pastes</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Badges -->
+                    {% if user.badge_details %}
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            {% for badge in user.badge_details %}
+                                <span class="px-2 py-1 rounded-full text-xs font-medium flex items-center space-x-1" 
+                                      style="background-color: {{ badge.color }}20; color: {{ badge.color }}; border: 1px solid {{ badge.color }}40;">
+                                    <span>{{ badge.icon }}</span>
+                                    <span>{{ badge.display_name }}</span>
+                                    {% if badge.verified %}
+                                        <span class="text-blue-400">✓</span>
+                                    {% endif %}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="flex justify-between items-center">
+                        <div class="text-sm text-gray-400">
+                            <span>Joined {{ user.created_at[:10] if user.created_at else 'Unknown' }}</span>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            {% if current_user and current_user.username != user.username %}
+                                <button onclick="toggleFollow('{{ user.username }}', this)"
+                                        class="px-3 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105 follow-btn"
+                                        data-username="{{ user.username }}"
+                                        data-following="{{ 'true' if user.username in following_users else 'false' }}">
+                                    <span class="follow-text">{{ 'Unfollow' if user.username in following_users else 'Follow' }}</span>
+                                </button>
+                            {% endif %}
+                            <a href="/user/{{ user.username }}" class="text-blue-400 hover:text-blue-300 transition-colors text-sm">
+                                View Profile →
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if not users %}
+            <div class="text-center py-12">
+                <div class="text-6xl mb-4">👥</div>
+                <h3 class="text-xl font-semibold mb-2">No users found</h3>
+                <p class="text-gray-400">Be the first to join the community!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Search functionality
+        document.getElementById('userSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const userCards = document.querySelectorAll('.user-card');
+            
+            userCards.forEach(card => {
+                const username = card.querySelector('h3 a').textContent.toLowerCase();
+                const badges = Array.from(card.querySelectorAll('span')).map(b => b.textContent.toLowerCase()).join(' ');
+                
+                if (username.includes(searchTerm) || badges.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+        
+        async function toggleFollow(username, button) {
+            const text = button.querySelector('.follow-text');
+            const isFollowing = button.dataset.following === 'true';
+            
+            try {
+                const response = await fetch(`/api/follow/${username}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    button.dataset.following = data.following ? 'true' : 'false';
+                    text.textContent = data.following ? 'Unfollow' : 'Follow';
+                    
+                    // Update button style
+                    if (data.following) {
+                        button.className = 'px-3 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105 follow-btn bg-gray-600 hover:bg-gray-700 text-white';
+                    } else {
+                        button.className = 'px-3 py-1 rounded-lg text-xs font-medium transition-all hover:scale-105 follow-btn bg-primary hover:bg-blue-700 text-white';
+                    }
+                } else {
+                    alert('Error following/unfollowing user');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error following/unfollowing user');
+            }
+        }
+        
+        // Set initial button styles
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.follow-btn').forEach(btn => {
+                const isFollowing = btn.dataset.following === 'true';
+                if (isFollowing) {
+                    btn.className += ' bg-gray-600 hover:bg-gray-700 text-white';
+                } else {
+                    btn.className += ' bg-primary hover:bg-blue-700 text-white';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
