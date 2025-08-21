@@ -67,9 +67,13 @@
         <div class="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 mb-8 border border-gray-700">
             <div class="flex flex-col space-y-4">
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    {% if user.profile_picture %}
+                    <img src="{{ user.profile_picture }}" alt="{{ user.username }} profile picture" class="w-16 h-16 rounded-full object-cover flex-shrink-0">
+                    {% else %}
                     <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-2xl font-bold flex-shrink-0">
                         {{ user.username[0].upper( ) }}
                     </div>
+                    {% endif %}
                     <div class="flex-1 min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-2">
                             <h1 class="text-2xl font-bold truncate">{{ user.username }}</h1>
