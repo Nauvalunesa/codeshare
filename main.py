@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Depends, HTTPException, status, Form, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles
 import uuid
 import hashlib
 import secrets
@@ -51,6 +52,9 @@ os.makedirs("data/users", exist_ok=True)
 os.makedirs("data/codes", exist_ok=True)
 os.makedirs("data/threads", exist_ok=True)
 os.makedirs("data/notifications", exist_ok=True)
+os.makedirs("data/profile_pictures", exist_ok=True)
+
+app.mount("/profile_pictures", StaticFiles(directory="data/profile_pictures"), name="profile_pictures")
 
 def load_json_file(filepath: str) -> Dict[str, Any]:
     """Load JSON file, return empty dict if file doesn't exist"""
@@ -383,7 +387,8 @@ def get_all_users() -> List[Dict[str, Any]]:
                         "created_at": user_data.get("created_at"),
                         "badges": user_data.get("badges", []),
                         "is_admin": user_data.get("is_admin", False),
-                        "verified_by_admin": user_data.get("verified_by_admin", False)
+                        "verified_by_admin": user_data.get("verified_by_admin", False),
+                        "profile_picture": user_data.get("profile_picture")
                     }
                     users.append(safe_user)
     return sorted(users, key=lambda x: x.get("created_at", ""), reverse=True)
@@ -833,7 +838,8 @@ async def signup(
         "badges": ["newcomer"],
         "is_admin": False,
         "verified_by_admin": False,
-        "auth_provider": "local"
+        "auth_provider": "local",
+        "profile_picture": None
     }
     
     save_user(username, user_data)
@@ -894,82 +900,78 @@ async def create_paste(
         try:
             file_content = save_uploaded_file(file)
             final_content = file_content if not content else content + "\n\n" + file_content
-            
 
+            if language == "text" and file.filename:
+                ext = file.filename.split('.')[-1].lower()
+                language_map = {
+                    # Bahasa pemrograman populer
+                    'py': 'python',
+                    'js': 'javascript',
+                    'ts': 'typescript',
+                    'html': 'html',
+                    'htm': 'html',
+                    'css': 'css',
+                    'java': 'java',
+                    'cpp': 'cpp',
+                    'c': 'c',
+                    'cs': 'csharp',
+                    'rb': 'ruby',
+                    'php': 'php',
+                    'go': 'go',
+                    'rs': 'rust',
+                    'kt': 'kotlin',
+                    'swift': 'swift',
+                    'scala': 'scala',
+                    'dart': 'dart',
 
-try:
-    if language == "text" and file.filename:
-        ext = file.filename.split('.')[-1].lower()
-        language_map = {
-            # Bahasa pemrograman populer
-            'py': 'python',
-            'js': 'javascript',
-            'ts': 'typescript',
-            'html': 'html',
-            'htm': 'html',
-            'css': 'css',
-            'java': 'java',
-            'cpp': 'cpp',
-            'c': 'c',
-            'cs': 'csharp',
-            'rb': 'ruby',
-            'php': 'php',
-            'go': 'go',
-            'rs': 'rust',
-            'kt': 'kotlin',
-            'swift': 'swift',
-            'scala': 'scala',
-            'dart': 'dart',
+                    # Data & config
+                    'sql': 'sql',
+                    'json': 'json',
+                    'xml': 'xml',
+                    'yml': 'yaml',
+                    'yaml': 'yaml',
+                    'toml': 'toml',
+                    'ini': 'ini',
+                    'cfg': 'ini',
+                    'env': 'dotenv',
 
-            # Data & config
-            'sql': 'sql',
-            'json': 'json',
-            'xml': 'xml',
-            'yml': 'yaml',
-            'yaml': 'yaml',
-            'toml': 'toml',
-            'ini': 'ini',
-            'cfg': 'ini',
-            'env': 'dotenv',
+                    # Shell & scripting
+                    'sh': 'bash',
+                    'bash': 'bash',
+                    'ps1': 'powershell',
+                    'bat': 'batch',
+                    'cmd': 'batch',
 
-            # Shell & scripting
-            'sh': 'bash',
-            'bash': 'bash',
-            'ps1': 'powershell',
-            'bat': 'batch',
-            'cmd': 'batch',
+                    # Markup & docs
+                    'md': 'markdown',
+                    'markdown': 'markdown',
+                    'rst': 'rst',
+                    'tex': 'latex',
+                    'latex': 'latex',
 
-            # Markup & docs
-            'md': 'markdown',
-            'markdown': 'markdown',
-            'rst': 'rst',
-            'tex': 'latex',
-            'latex': 'latex',
+                    # Web & template
+                    'vue': 'vue',
+                    'svelte': 'svelte',
+                    'jsx': 'jsx',
+                    'tsx': 'tsx',
+                    'ejs': 'ejs',
+                    'twig': 'twig',
+                    'jinja': 'jinja',
 
-            # Web & template
-            'vue': 'vue',
-            'svelte': 'svelte',
-            'jsx': 'jsx',
-            'tsx': 'tsx',
-            'ejs': 'ejs',
-            'twig': 'twig',
-            'jinja': 'jinja',
+                    # Tambahan lain
+                    'pl': 'perl',
+                    'lua': 'lua',
+                    'r': 'r',
+                    'erl': 'erlang',
+                    'ex': 'elixir',
+                    'clj': 'clojure',
+                    'hs': 'haskell',
+                    'ml': 'ocaml'
+                }
 
-            # Tambahan lain
-            'pl': 'perl',
-            'lua': 'lua',
-            'r': 'r',
-            'erl': 'erlang',
-            'ex': 'elixir',
-            'clj': 'clojure',
-            'hs': 'haskell',
-            'ml': 'ocaml'
-        }
-
-        language = language_map.get(ext, 'text')
-
-except Exception as e:
-    raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
+                language = language_map.get(ext, 'text')
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Error processing file: {str(e)}")
 
     
     # Get user info
@@ -1093,7 +1095,8 @@ async def api_dashboard(current_user: str = Depends(get_current_user)):
             "email": user_data["email"],
             "badges": user_data.get("badges", []),
             "verified_by_admin": user_data.get("verified_by_admin", False),
-            "is_admin": user_data.get("is_admin", False)
+            "is_admin": user_data.get("is_admin", False),
+            "profile_picture": user_data.get("profile_picture")
         },
         "pastes": user_pastes,
         "stats": {
@@ -1286,7 +1289,8 @@ async def view_user_profile(username: str, request: Request):
             "badge_details": badge_details,
             "created_at": updated_user.get("created_at"),
             "is_admin": updated_user.get("is_admin", False),
-            "verified_by_admin": updated_user.get("verified_by_admin", False)
+            "verified_by_admin": updated_user.get("verified_by_admin", False),
+            "profile_picture": updated_user.get("profile_picture")
         },
         "pastes": user_codes,
         "current_user": current_user,
@@ -1333,6 +1337,7 @@ async def view_all_users(request: Request):
             "badge_details": badge_details,
             "is_admin": updated_user.get("is_admin", False),
             "verified_by_admin": updated_user.get("verified_by_admin", False),
+            "profile_picture": updated_user.get("profile_picture"),
             "paste_count": len(get_user_codes(user["username"]))
         })
     
@@ -1508,6 +1513,31 @@ async def get_admin_stats(current_user: str = Depends(get_current_user)):
     }
 
 # Profile editing endpoints
+
+@app.post("/api/profile-picture")
+async def upload_profile_picture(
+    file: UploadFile = File(...),
+    current_user: str = Depends(get_current_user)
+):
+    """Upload or update user's profile picture"""
+    allowed_extensions = {"png", "jpg", "jpeg", "gif"}
+    ext = file.filename.split(".")[-1].lower()
+    if ext not in allowed_extensions:
+        raise HTTPException(status_code=400, detail="Invalid image format")
+
+    save_dir = "data/profile_pictures"
+    os.makedirs(save_dir, exist_ok=True)
+    file_path = f"{save_dir}/{current_user}.{ext}"
+
+    with open(file_path, "wb") as buffer:
+        buffer.write(await file.read())
+
+    user = get_user_by_username(current_user)
+    user["profile_picture"] = f"/profile_pictures/{current_user}.{ext}"
+    save_user(current_user, user)
+
+    return {"profile_picture": user["profile_picture"]}
+
 @app.post("/api/profile/update")
 async def update_profile(
     name: Optional[str] = Form(default=None),
@@ -1538,12 +1568,24 @@ async def update_profile(
         # Save user with new username
         save_user(username, user)
         user["username"] = username
-        
+
         # Delete old user file
         old_filepath = f"data/users/{current_user}.json"
         if os.path.exists(old_filepath):
             os.remove(old_filepath)
-        
+
+        # Rename profile picture if exists
+        if user.get("profile_picture"):
+            old_base = f"data/profile_pictures/{current_user}"
+            for ext in ("png", "jpg", "jpeg", "gif"):
+                old_file = f"{old_base}.{ext}"
+                if os.path.exists(old_file):
+                    new_file = f"data/profile_pictures/{username}.{ext}"
+                    os.rename(old_file, new_file)
+                    user["profile_picture"] = f"/profile_pictures/{username}.{ext}"
+                    save_user(username, user)
+                    break
+
         # Update all pastes with new username
         if os.path.exists("data/codes"):
             for filename in os.listdir("data/codes"):
