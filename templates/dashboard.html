@@ -189,16 +189,20 @@
                         <label class="block text-sm font-medium mb-2 text-purple-300">Username</label>
                         <input type="text" id="profile-username" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium mb-2 text-purple-300">Password Baru (kosongkan jika tidak ingin mengubah)</label>
-                        <input type="password" id="profile-password" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
-                    </div>
-                    <div class="flex gap-3 pt-4">
-                        <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
-                            💾 Simpan
-                        </button>
-                        <button type="button" onclick="hideProfileEdit()" class="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
-                            ❌ Batal
+        <div>
+            <label class="block text-sm font-medium mb-2 text-purple-300">Password Baru (kosongkan jika tidak ingin mengubah)</label>
+            <input type="password" id="profile-password" class="w-full bg-white/10 border border-white/20 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-2 text-purple-300">Foto Profil</label>
+            <input type="file" id="profile-picture" accept="image/*" class="w-full text-white" />
+        </div>
+        <div class="flex gap-3 pt-4">
+            <button type="submit" class="flex-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
+                💾 Simpan
+            </button>
+            <button type="button" onclick="hideProfileEdit()" class="flex-1 bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 px-6 py-2 rounded-lg transition-all font-medium shadow-lg">
+                ❌ Batal
                         </button>
                     </div>
                 </form>
@@ -567,12 +571,17 @@
             const adminIcon = data.user.is_admin ? '<span class="text-red-400 text-xl ml-1">👑</span>' : '';
             
             document.getElementById('welcome-text').innerHTML = `
-                Selamat datang kembali, 
-                <span class="font-semibold text-purple-300">${data.user.username}</span> 
-                ${verifiedIcon} 
-                ${adminIcon}
-                <div class="flex flex-wrap gap-2 mt-2">
-                    ${badgeHtml}
+                <div class="flex items-center gap-4">
+                    ${data.user.profile_picture ? `<img src="${data.user.profile_picture}" class="w-12 h-12 rounded-full object-cover">` : `<div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold">${data.user.username.charAt(0).toUpperCase()}</div>`}
+                    <div>
+                        Selamat datang kembali,
+                        <span class="font-semibold text-purple-300">${data.user.username}</span>
+                        ${verifiedIcon}
+                        ${adminIcon}
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            ${badgeHtml}
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -819,7 +828,8 @@
             const name = document.getElementById('profile-name').value;
             const username = document.getElementById('profile-username').value;
             const password = document.getElementById('profile-password').value;
-            
+            const profilePic = document.getElementById('profile-picture').files[0];
+
             if (name) formData.append('name', name);
             if (username) formData.append('username', username);
             if (password) formData.append('password', password);
@@ -831,11 +841,20 @@
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
-                
+
                 const data = await response.json();
                 if (response.ok) {
                     if (data.new_token) {
                         localStorage.setItem('token', data.new_token);
+                    }
+                    if (profilePic) {
+                        const picForm = new FormData();
+                        picForm.append('file', profilePic);
+                        await fetch('/api/profile-picture', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` },
+                            body: picForm
+                        });
                     }
                     alert('✅ Profil berhasil diperbarui!');
                     hideProfileEdit();
