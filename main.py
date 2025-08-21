@@ -1056,7 +1056,12 @@ async def view_paste(
     
     # Get threads
     threads = get_threads_by_code_id(paste_id)
-    
+
+    # Include author profile picture if available
+    author_data = get_user_by_username(paste.get("author_username", ""))
+    if author_data:
+        paste["author_profile_picture"] = author_data.get("profile_picture")
+
     return templates.TemplateResponse("paste.html", {
         "request": request,
         "paste": paste,
@@ -1166,6 +1171,11 @@ async def view_paste(
     
     # Get threads
     threads = get_threads_by_code_id(paste_id)
+
+    # Include author profile picture if available
+    author_data = get_user_by_username(paste.get("author_username", ""))
+    if author_data:
+        paste["author_profile_picture"] = author_data.get("profile_picture")
 
     return templates.TemplateResponse("paste.html", {
         "request": request,

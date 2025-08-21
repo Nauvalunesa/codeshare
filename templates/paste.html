@@ -65,9 +65,13 @@
                     <h1 class="text-2xl sm:text-3xl font-bold text-white mb-3">{{ paste.title }}</h1>
                     <div class="flex flex-wrap items-center gap-3 text-sm">
                         <div class="flex items-center gap-2">
+                            {% if paste.author_profile_picture %}
+                            <img src="{{ paste.author_profile_picture }}" alt="{{ paste.author_username }} profile picture" class="w-8 h-8 rounded-full object-cover">
+                            {% else %}
                             <div class="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
                                 {{ paste.author_username[0].upper() }}
                             </div>
+                            {% endif %}
                             <span class="text-blue-300 flex items-center gap-1">
                                 {{ paste.author_username }}
                                 {% if paste.author_is_verified %}
@@ -118,6 +122,9 @@
                     <button onclick="copyCode()" class="bg-green-600 hover:bg-green-700 px-3 py-2 rounded-lg text-sm transition-all">
                         📋 Salin Kode
                     </button>
+                    <button onclick="downloadCode()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
+                        ⬇️ Unduh Kode
+                    </button>
                     <button onclick="copyURL()" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm transition-all">
                         🔗 Salin URL
                     </button>
@@ -125,7 +132,7 @@
             </div>
             
             <div class="bg-gray-900/80 rounded-lg p-4 overflow-x-auto">
-                <pre><code class="language-{{ paste.language }}">{{ paste.content }}</code></pre>
+                <pre><code id="pasteCode" class="language-{{ paste.language }}">{{ paste.content }}</code></pre>
             </div>
         </div>
         
@@ -179,13 +186,33 @@
             });
         }
 
+        function downloadCode() {
+            const codeElement = document.getElementById('pasteCode');
+            if (!codeElement) {
+                alert('Kode tidak ditemukan');
+                return;
+            }
+
+            const content = codeElement.textContent || codeElement.innerText;
+            const filename = "{{ (paste.title or 'code')|replace(' ', '_') }}.{{ 'txt' if paste.language == 'text' else paste.language }}";
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        }
+
         function logout() {
             localStorage.removeItem('token');
             window.location.href = '/login';
         }
 
         function copyCode() {
-            const codeElement = document.querySelector('pre code');
+            const codeElement = document.getElementById('pasteCode');
             if (!codeElement) {
                 alert('Kode tidak ditemukan');
                 return;
