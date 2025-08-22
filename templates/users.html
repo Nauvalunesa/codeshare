@@ -84,9 +84,13 @@
             {% for user in users %}
                 <div class="user-card bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700 hover:border-gray-600 transition-all">
                     <div class="flex items-center space-x-4 mb-4">
+                        {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture }}" alt="{{ user.username }} profile picture" class="w-12 h-12 rounded-full object-cover">
+                        {% else %}
                         <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-lg font-bold">
                             {{ user.username[0].upper() }}
                         </div>
+                        {% endif %}
                         <div class="flex-1">
                             <div class="flex items-center space-x-2 mb-1">
                                 <h3 class="font-semibold text-lg">
